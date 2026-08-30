@@ -1,0 +1,2768 @@
+<!doctype html>
+<html lang="ko" data-theme>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI 연구·행정 인프라 가이드</title>
+<link rel="alternate" hreflang="en" href="index-en.html">
+<link rel="alternate" hreflang="ko" href="index.html">
+<meta name="description" content="맥·연구실 본체·노트북에 구축된 개인 AI 연구·행정 인프라 — 시스템 구성, 구축 가이드, 실전 활용 사례">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/* ============================================================
+   토큰
+   ============================================================ */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --surface2:#f2f4f8; --surface3:#e9edf3;
+  --border:#e2e6ee; --border2:#cfd6e2;
+  --text:#171a1f; --text2:#3d4552; --muted:#6a7383;
+  --a:#a8560a;   --a-fg:#8a4508; --a-bg:#fdf4e9; --a-bd:#eec091;
+  --b:#1b4fd8;   --b-fg:#1a45b8; --b-bg:#edf2ff; --b-bd:#aac0f4;
+  --c:#0d7268;   --c-fg:#0b6259; --c-bg:#eaf8f5; --c-bd:#93d5cb;
+  --w:#b3231f;   --w-fg:#9c1c19; --w-bg:#fdf1f0; --w-bd:#f2b6b3;
+  --t:#6425c9;   --t-fg:#5a1fb4; --t-bg:#f5f0ff; --t-bd:#cdb6f3;
+  --ring:#2563eb;
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 4px 16px rgba(15,23,42,.055);
+  --shadow-lg:0 2px 6px rgba(15,23,42,.06),0 18px 40px rgba(15,23,42,.09);
+  --r:14px; --r-sm:9px; --r-lg:20px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --sidebar:266px; --topbar:58px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1116; --surface:#161a21; --surface2:#1c212a; --surface3:#242b36;
+    --border:#2a313d; --border2:#3a4353;
+    --text:#e9edf4; --text2:#c2cad6; --muted:#8b96a7;
+    --a:#f0ad4e; --a-fg:#f3bc6d; --a-bg:#2b2013; --a-bd:#6b4c1c;
+    --b:#79a8ff; --b-fg:#93b9ff; --b-bg:#141d33; --b-bd:#2d4a86;
+    --c:#4fd3c0; --c-fg:#6fdccb; --c-bg:#0f2925; --c-bd:#1f6459;
+    --w:#f5837e; --w-fg:#f79b96; --w-bg:#2e1616; --w-bd:#7a2f2c;
+    --t:#b28cf5; --t-fg:#c3a5f8; --t-bg:#211a38; --t-bd:#4f3690;
+    --ring:#6ea3ff;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.32);
+    --shadow-lg:0 2px 6px rgba(0,0,0,.35),0 18px 40px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1116; --surface:#161a21; --surface2:#1c212a; --surface3:#242b36;
+  --border:#2a313d; --border2:#3a4353;
+  --text:#e9edf4; --text2:#c2cad6; --muted:#8b96a7;
+  --a:#f0ad4e; --a-fg:#f3bc6d; --a-bg:#2b2013; --a-bd:#6b4c1c;
+  --b:#79a8ff; --b-fg:#93b9ff; --b-bg:#141d33; --b-bd:#2d4a86;
+  --c:#4fd3c0; --c-fg:#6fdccb; --c-bg:#0f2925; --c-bd:#1f6459;
+  --w:#f5837e; --w-fg:#f79b96; --w-bg:#2e1616; --w-bd:#7a2f2c;
+  --t:#b28cf5; --t-fg:#c3a5f8; --t-bg:#211a38; --t-bd:#4f3690;
+  --ring:#6ea3ff;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.32);
+  --shadow-lg:0 2px 6px rgba(0,0,0,.35),0 18px 40px rgba(0,0,0,.45);
+}
+
+/* ============================================================
+   기본
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--topbar) + 18px);-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+  font-size:15.5px;line-height:1.72;letter-spacing:-.01em;-webkit-font-smoothing:antialiased}
+img{max-width:100%}
+a{color:var(--b-fg);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--ring);outline-offset:2px;border-radius:4px}
+h1,h2,h3,h4{line-height:1.32;letter-spacing:-.024em;margin:0}
+code,kbd{font-family:var(--mono);font-size:.875em}
+p code,li code,td code{background:var(--surface3);border:1px solid var(--border);
+  padding:.1em .38em;border-radius:5px;white-space:nowrap}
+hr{border:0;border-top:1px solid var(--border);margin:34px 0}
+.skip{position:absolute;left:-9999px;top:0;background:var(--surface);padding:10px 16px;z-index:200;border-radius:0 0 8px 0}
+.skip:focus{left:0}
+
+/* ============================================================
+   레이아웃
+   ============================================================ */
+.topbar{position:sticky;top:0;z-index:60;height:var(--topbar);display:flex;align-items:center;
+  gap:12px;padding:0 16px;background:color-mix(in srgb,var(--surface) 88%,transparent);
+  backdrop-filter:saturate(1.6) blur(12px);border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px;white-space:nowrap;color:var(--text)}
+.brand:hover{text-decoration:none}
+.brand .dot{width:22px;height:22px;border-radius:7px;flex:0 0 auto;
+  background:linear-gradient(135deg,var(--b) 0%,var(--c) 55%,var(--a) 100%)}
+.brand small{display:block;font-weight:500;font-size:10.5px;color:var(--muted);letter-spacing:0}
+.tb-spacer{flex:1}
+.iconbtn{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);background:var(--surface);color:var(--text2);
+  border-radius:9px;cursor:pointer;font-size:15px;flex:0 0 auto}
+.iconbtn:hover{background:var(--surface2);color:var(--text)}
+.lang{display:inline-flex;height:36px;flex:0 0 auto;border:1px solid var(--border);
+  border-radius:9px;overflow:hidden;background:var(--surface)}
+.lang>*{display:inline-flex;align-items:center;padding:0 11px;font-size:11.5px;
+  font-weight:800;letter-spacing:.03em;line-height:1}
+.lang .on{background:var(--text);color:var(--bg)}
+.lang a{color:var(--muted)}
+.lang a:hover{background:var(--surface2);color:var(--text);text-decoration:none}
+@media (max-width:560px){.lang>*{padding:0 9px;font-size:11px}}
+
+.layout{display:grid;grid-template-columns:var(--sidebar) minmax(0,1fr);gap:0;
+  max-width:1480px;margin:0 auto}
+.sidebar{position:sticky;top:var(--topbar);align-self:start;height:calc(100vh - var(--topbar));
+  overflow-y:auto;padding:22px 14px 60px;border-right:1px solid var(--border)}
+.sb-group{margin-bottom:20px}
+.sb-title{font-size:10.5px;font-weight:700;letter-spacing:.09em;color:var(--muted);
+  text-transform:uppercase;padding:0 10px;margin-bottom:7px}
+.sb-link{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;
+  color:var(--text2);font-size:13.6px;font-weight:500;line-height:1.4}
+.sb-link:hover{background:var(--surface2);color:var(--text);text-decoration:none}
+.sb-link.active{background:var(--surface3);color:var(--text);font-weight:700}
+.sb-link .n{width:19px;height:19px;flex:0 0 auto;display:grid;place-items:center;border-radius:6px;
+  background:var(--surface3);font-size:10.5px;font-weight:700;color:var(--muted)}
+.sb-link.active .n{background:var(--b);color:#fff}
+.sb-sub{display:block;padding:5px 10px 5px 40px;font-size:12.7px;color:var(--muted);border-radius:7px}
+.sb-sub:hover{background:var(--surface2);color:var(--text2);text-decoration:none}
+
+main{min-width:0;padding:0 30px 120px}
+.section{padding-top:44px;scroll-margin-top:calc(var(--topbar) + 10px)}
+.wrap{max-width:920px}
+.wrap-wide{max-width:1120px}
+
+.sec-head{margin-bottom:22px}
+.sec-kicker{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;
+  letter-spacing:.05em;color:var(--muted);text-transform:uppercase;margin-bottom:9px}
+.sec-head h2{font-size:29px;font-weight:800;margin-bottom:9px}
+.sec-head .lede{color:var(--text2);font-size:15.5px;max-width:76ch}
+h3.blk{font-size:20px;font-weight:800;margin:38px 0 13px;scroll-margin-top:calc(var(--topbar) + 14px)}
+h4.blk{font-size:16px;font-weight:800;margin:24px 0 9px}
+.section > .wrap > p, .section > .wrap-wide > p{color:var(--text2);margin:0 0 13px}
+
+/* ============================================================
+   배지 (P3 핵심)
+   ============================================================ */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:2.5px 9px;border-radius:999px;
+  font-size:11.5px;font-weight:700;line-height:1.6;white-space:nowrap;border:1px solid;vertical-align:.08em}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
+.bg-a{color:var(--a-fg);background:var(--a-bg);border-color:var(--a-bd)}
+.bg-b{color:var(--b-fg);background:var(--b-bg);border-color:var(--b-bd)}
+.bg-c{color:var(--c-fg);background:var(--c-bg);border-color:var(--c-bd)}
+.bg-w{color:var(--w-fg);background:var(--w-bg);border-color:var(--w-bd)}
+.bg-t{color:var(--t-fg);background:var(--t-bg);border-color:var(--t-bd)}
+.badge.plain::before{display:none}
+.badge-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+
+/* ============================================================
+   카드 / 그리드
+   ============================================================ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:20px;box-shadow:var(--shadow)}
+.card h4{font-size:15.5px;font-weight:800;margin-bottom:8px}
+.card p:last-child{margin-bottom:0}
+.card p{margin:0 0 9px;color:var(--text2);font-size:14.3px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card.acc-a{border-left:3px solid var(--a)}
+.card.acc-b{border-left:3px solid var(--b)}
+.card.acc-c{border-left:3px solid var(--c)}
+
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:17px 18px;box-shadow:var(--shadow)}
+.stat .k{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.03em;margin-bottom:5px}
+.stat .v{font-size:27px;font-weight:800;line-height:1.15;letter-spacing:-.03em}
+.stat .v small{font-size:14px;font-weight:700;color:var(--muted);margin-left:2px}
+.stat .d{font-size:12.6px;color:var(--muted);margin-top:5px;line-height:1.5}
+
+/* ============================================================
+   콜아웃
+   ============================================================ */
+.callout{border:1px solid var(--border);border-left-width:3px;border-radius:var(--r-sm);
+  padding:14px 16px;margin:14px 0;font-size:14.3px;background:var(--surface);color:var(--text2)}
+.callout p{margin:0 0 8px}.callout p:last-child{margin:0}
+.callout strong{color:var(--text)}
+.callout .cl-t{display:block;font-weight:800;font-size:13.3px;margin-bottom:5px;letter-spacing:-.01em}
+.cl-warn{background:var(--w-bg);border-color:var(--w-bd);border-left-color:var(--w)}
+.cl-warn .cl-t{color:var(--w-fg)}
+.cl-tip{background:var(--t-bg);border-color:var(--t-bd);border-left-color:var(--t)}
+.cl-tip .cl-t{color:var(--t-fg)}
+.cl-a{background:var(--a-bg);border-color:var(--a-bd);border-left-color:var(--a)}
+.cl-a .cl-t{color:var(--a-fg)}
+.cl-b{background:var(--b-bg);border-color:var(--b-bd);border-left-color:var(--b)}
+.cl-b .cl-t{color:var(--b-fg)}
+.cl-c{background:var(--c-bg);border-color:var(--c-bd);border-left-color:var(--c)}
+.cl-c .cl-t{color:var(--c-fg)}
+.cl-note{background:var(--surface2);border-left-color:var(--border2)}
+.callout.hero-warn{border-left-width:4px;box-shadow:var(--shadow)}
+
+/* ============================================================
+   표
+   ============================================================ */
+.tw{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);
+  margin:14px 0;box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+thead th{background:var(--surface2);text-align:left;font-weight:700;font-size:12.5px;
+  color:var(--text2);padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap;letter-spacing:.01em}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--surface2)}
+tbody td strong{color:var(--text)}
+td.nw,th.nw{white-space:nowrap}
+table.compact{min-width:420px}
+table.compact tbody td,table.compact thead th{padding:8px 12px}
+
+/* ============================================================
+   프롬프트 블록 + 복사
+   ============================================================ */
+.prompt{position:relative;margin:12px 0;border:1px solid var(--border2);border-radius:var(--r-sm);
+  background:var(--surface2);overflow:hidden}
+.prompt-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);
+  background:var(--surface3);font-size:12px;font-weight:700;color:var(--text2)}
+.prompt-head .ph-i{font-size:12px}
+.prompt-head .sp{flex:1}
+.prompt pre{margin:0;padding:14px 15px;overflow-x:auto;font-family:var(--mono);font-size:12.9px;
+  line-height:1.68;color:var(--text);white-space:pre;-webkit-overflow-scrolling:touch}
+.copy{border:1px solid var(--border2);background:var(--surface);color:var(--text2);
+  border-radius:7px;padding:3.5px 10px;font-size:11.5px;font-weight:700;cursor:pointer;
+  font-family:var(--sans);white-space:nowrap;transition:background .15s,color .15s}
+.copy:hover{background:var(--b-bg);color:var(--b-fg);border-color:var(--b-bd)}
+.copy.ok{background:var(--c-bg);color:var(--c-fg);border-color:var(--c-bd)}
+
+/* ============================================================
+   아코디언
+   ============================================================ */
+details.acc{border:1px solid var(--border);border-radius:var(--r);background:var(--surface);
+  margin:10px 0;box-shadow:var(--shadow);overflow:hidden}
+details.acc>summary{list-style:none;cursor:pointer;padding:15px 18px;display:flex;align-items:flex-start;
+  gap:11px;font-weight:700;font-size:15px;color:var(--text)}
+details.acc>summary::-webkit-details-marker{display:none}
+details.acc>summary:hover{background:var(--surface2)}
+details.acc>summary .chev{margin-left:auto;flex:0 0 auto;color:var(--muted);font-size:12px;
+  transition:transform .2s;padding-top:3px}
+details.acc[open]>summary .chev{transform:rotate(90deg)}
+details.acc>summary .sum-t{flex:1;min-width:0}
+details.acc>summary .sum-sub{display:block;font-weight:500;font-size:12.8px;color:var(--muted);margin-top:3px}
+.acc-body{padding:2px 18px 18px;border-top:1px solid var(--border)}
+.acc-body>*:first-child{margin-top:14px}
+.acc-body ul,.acc-body ol{margin:10px 0;padding-left:20px;color:var(--text2);font-size:14.3px}
+.acc-body li{margin:5px 0}
+.num{width:25px;height:25px;flex:0 0 auto;border-radius:8px;display:grid;place-items:center;
+  font-size:12px;font-weight:800;background:var(--surface3);color:var(--text2)}
+details.acc.a-acc>summary .num{background:var(--a-bg);color:var(--a-fg);border:1px solid var(--a-bd)}
+details.acc.b-acc>summary .num{background:var(--b-bg);color:var(--b-fg);border:1px solid var(--b-bd)}
+
+/* ============================================================
+   완료 판정
+   ============================================================ */
+.done{display:flex;gap:10px;align-items:flex-start;margin:14px 0 0;padding:12px 14px;
+  background:var(--c-bg);border:1px solid var(--c-bd);border-radius:var(--r-sm);font-size:13.8px;color:var(--text2)}
+.done .dk{font-weight:800;color:var(--c-fg);white-space:nowrap;font-size:13px}
+.done strong{color:var(--text)}
+
+/* ============================================================
+   칩 필터
+   ============================================================ */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}
+.chip{border:1px solid var(--border2);background:var(--surface);color:var(--text2);
+  border-radius:999px;padding:5.5px 13px;font-size:12.8px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+.chip:hover{background:var(--surface2);color:var(--text)}
+.chip[aria-pressed="true"]{background:var(--text);color:var(--bg);border-color:var(--text)}
+.chip .cnt{opacity:.6;margin-left:4px;font-size:11px}
+
+.field{display:flex;align-items:center;gap:8px;border:1px solid var(--border2);background:var(--surface);
+  border-radius:10px;padding:0 12px;height:38px}
+.field input{border:0;background:transparent;color:var(--text);font-family:var(--sans);
+  font-size:14px;flex:1;min-width:0;outline:none;height:100%}
+.field input::placeholder{color:var(--muted)}
+.field .fi{color:var(--muted);font-size:13px}
+
+/* ============================================================
+   체크리스트 (P5)
+   ============================================================ */
+.ck-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 10px}
+.ck-head h4{margin:0;font-size:15.5px;font-weight:800}
+.bar{flex:1;min-width:150px;height:7px;background:var(--surface3);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--b),var(--c));
+  border-radius:999px;transition:width .35s ease}
+.ck-n{font-size:12.5px;font-weight:800;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ck-list{border:1px solid var(--border);border-radius:var(--r);background:var(--surface);
+  overflow:hidden;box-shadow:var(--shadow)}
+.ck{display:flex;gap:12px;padding:12px 15px;border-bottom:1px solid var(--border);align-items:flex-start}
+.ck:last-child{border-bottom:0}
+.ck:hover{background:var(--surface2)}
+.ck input{appearance:none;width:19px;height:19px;flex:0 0 auto;margin-top:2px;border:1.5px solid var(--border2);
+  border-radius:6px;cursor:pointer;background:var(--surface);position:relative}
+.ck input:checked{background:var(--c);border-color:var(--c)}
+.ck input:checked::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;
+  color:#fff;font-size:12px;font-weight:900}
+.ck-b{flex:1;min-width:0}
+.ck-t{font-size:14.2px;font-weight:600;color:var(--text)}
+.ck input:checked ~ .ck-b .ck-t{color:var(--muted);text-decoration:line-through}
+.ck-m{font-size:12.7px;color:var(--muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:4px 12px}
+.ck-m b{font-weight:700;color:var(--text2)}
+.ck.crit .ck-t::after{content:"자주 놓침";margin-left:7px;font-size:10.5px;font-weight:800;
+  color:var(--w-fg);background:var(--w-bg);border:1px solid var(--w-bd);padding:1px 7px;border-radius:999px;
+  vertical-align:.12em;text-decoration:none;display:inline-block}
+.ck-tools{display:flex;gap:8px;margin-top:10px}
+.mini{border:1px solid var(--border2);background:var(--surface);color:var(--muted);border-radius:7px;
+  padding:4px 11px;font-size:11.8px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+.mini:hover{color:var(--text);background:var(--surface2)}
+
+/* ============================================================
+   SVG 다이어그램
+   ============================================================ */
+.figwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:8px;box-shadow:var(--shadow);margin:16px 0;-webkit-overflow-scrolling:touch}
+.figwrap svg{display:block;width:100%;height:auto}
+.fig-sm svg{min-width:520px}
+.fig-md svg{min-width:660px}
+.figcap{font-size:12.5px;color:var(--muted);margin-top:8px;padding:0 4px 4px;text-align:center}
+.sv-box{fill:var(--surface);stroke:var(--border2)}
+.sv-box-a{fill:var(--a-bg);stroke:var(--a-bd)}
+.sv-box-b{fill:var(--b-bg);stroke:var(--b-bd)}
+.sv-box-c{fill:var(--c-bg);stroke:var(--c-bd)}
+.sv-box-n{fill:var(--surface2);stroke:var(--border2)}
+.sv-t{fill:var(--text);font-family:var(--sans);font-weight:700}
+.sv-m{fill:var(--muted);font-family:var(--sans);font-weight:500}
+.sv-2{fill:var(--text2);font-family:var(--sans);font-weight:500}
+.sv-ta{fill:var(--a-fg);font-family:var(--sans);font-weight:800}
+.sv-tb{fill:var(--b-fg);font-family:var(--sans);font-weight:800}
+.sv-tc{fill:var(--c-fg);font-family:var(--sans);font-weight:800}
+.sv-ln-a{stroke:var(--a);fill:none;stroke-width:2}
+.sv-ln-b{stroke:var(--b);fill:none;stroke-width:2}
+.sv-ln-c{stroke:var(--c);fill:none;stroke-width:2}
+.sv-dash{stroke-dasharray:5 4}
+
+/* ============================================================
+   검색 (P7)
+   ============================================================ */
+.search{position:relative;flex:1;max-width:400px;min-width:0}
+.search .field{height:36px}
+.results{position:absolute;top:calc(100% + 7px);left:0;right:0;background:var(--surface);
+  border:1px solid var(--border2);border-radius:var(--r);box-shadow:var(--shadow-lg);
+  max-height:min(62vh,460px);overflow-y:auto;z-index:90;padding:6px;display:none}
+.results.on{display:block}
+.results a{display:block;padding:9px 11px;border-radius:8px;color:var(--text)}
+.results a:hover,.results a.sel{background:var(--surface2);text-decoration:none}
+.results .rt{font-size:13.8px;font-weight:600;line-height:1.4}
+.results .rs{font-size:11.5px;color:var(--muted);margin-top:2px}
+.results .empty{padding:16px 12px;color:var(--muted);font-size:13.5px;text-align:center}
+mark{background:color-mix(in srgb,var(--a-bg) 70%,transparent);color:inherit;
+  border-bottom:1.5px solid var(--a-bd);padding:0 1px;border-radius:2px}
+@keyframes flash{0%,100%{background:transparent}22%{background:color-mix(in srgb,var(--a-bg) 85%,transparent)}}
+.flash{animation:flash 1.5s ease}
+
+/* ============================================================
+   판단 도우미 (P8)
+   ============================================================ */
+.helper{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:22px;box-shadow:var(--shadow-lg);margin:16px 0}
+.hq{font-size:16px;font-weight:800;margin-bottom:4px}
+.hs{font-size:13px;color:var(--muted);margin-bottom:14px}
+.hopts{display:grid;gap:9px}
+.hopt{text-align:left;border:1px solid var(--border2);background:var(--surface2);color:var(--text);
+  border-radius:11px;padding:13px 15px;cursor:pointer;font-family:var(--sans);font-size:14.3px;
+  font-weight:600;line-height:1.5;transition:border-color .15s,background .15s}
+.hopt:hover{border-color:var(--ring);background:var(--surface3)}
+.hopt small{display:block;font-weight:500;font-size:12.5px;color:var(--muted);margin-top:2px}
+.hres{border-radius:12px;padding:18px}
+.hres h4{font-size:17px;font-weight:800;margin-bottom:7px}
+.hres p{font-size:14.2px;margin:0 0 8px}
+.hres .why{font-size:13.2px;color:var(--muted);margin:0}
+.hsteps{display:flex;gap:6px;margin-bottom:14px}
+.hstep{height:4px;flex:1;border-radius:999px;background:var(--surface3)}
+.hstep.on{background:var(--b)}
+
+/* ============================================================
+   기타
+   ============================================================ */
+.tree{font-family:var(--mono);font-size:12.8px;line-height:1.85;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;overflow-x:auto;
+  box-shadow:var(--shadow);margin:14px 0;color:var(--text2);white-space:pre}
+.tree .cm{color:var(--muted)}
+.tree .hi{color:var(--a-fg);font-weight:700}
+.quickgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}
+.quick{display:block;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px;box-shadow:var(--shadow);color:var(--text);transition:transform .15s,box-shadow .15s}
+.quick:hover{text-decoration:none;transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:var(--border2)}
+.quick .qi{font-size:20px;margin-bottom:8px;display:block}
+.quick .qt{font-weight:800;font-size:14.5px;margin-bottom:3px}
+.quick .qd{font-size:12.5px;color:var(--muted);line-height:1.5}
+.hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:30px 30px 26px;box-shadow:var(--shadow-lg);margin-bottom:18px}
+.hero h1{font-size:31px;font-weight:800;letter-spacing:-.035em;margin-bottom:11px}
+.hero .sub{font-size:16px;color:var(--text2);max-width:70ch;margin:0 0 16px}
+.hero .meta{display:flex;flex-wrap:wrap;gap:7px;font-size:11.5px}
+.pill{border:1px solid var(--border);background:var(--surface2);color:var(--muted);
+  border-radius:999px;padding:3px 11px;font-weight:600}
+.case-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px}
+.step-tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;
+  color:var(--muted);letter-spacing:.03em;margin-bottom:6px}
+.hidden{display:none!important}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.3px;color:var(--muted);
+  padding:10px 4px 2px;justify-content:center}
+.legend i{display:inline-block;width:16px;height:2.5px;border-radius:2px;margin-right:5px;vertical-align:.22em}
+.tabbar{display:none}
+.track-pick{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}
+.track{display:block;border-radius:var(--r);padding:20px;border:1px solid;box-shadow:var(--shadow);color:var(--text)}
+.track:hover{text-decoration:none;box-shadow:var(--shadow-lg)}
+.track.tb{background:var(--b-bg);border-color:var(--b-bd)}
+.track.ta{background:var(--a-bg);border-color:var(--a-bd)}
+.track .tt{font-size:17px;font-weight:800;margin:9px 0 5px}
+.track .td{font-size:13.3px;color:var(--text2);line-height:1.55}
+.track .tm{font-size:12px;color:var(--muted);margin-top:10px;font-weight:600}
+.od{display:grid;gap:11px;margin:14px 0}
+.od-row{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:13px 15px;box-shadow:var(--shadow)}
+.od-n{font-weight:800;font-size:12px;color:var(--muted);background:var(--surface3);border-radius:6px;
+  padding:2px 8px;flex:0 0 auto;margin-top:1px}
+.od-b{flex:1;min-width:0;font-size:14.2px;color:var(--text2)}
+.od-b b{color:var(--text)}
+
+/* ============================================================
+   반응형
+   ============================================================ */
+@media (max-width:1080px){
+  .g4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .quickgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  :root{--topbar:54px}
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:fixed;top:var(--topbar);left:0;width:280px;height:calc(100vh - var(--topbar));
+    background:var(--surface);z-index:70;transform:translateX(-102%);transition:transform .25s ease;
+    box-shadow:var(--shadow-lg)}
+  .sidebar.open{transform:none}
+  main{padding:0 18px 110px}
+  .g2,.g3{grid-template-columns:1fr}
+  .track-pick{grid-template-columns:1fr}
+  .hero{padding:24px 20px 22px;border-radius:var(--r)}
+  .hero h1{font-size:25px}
+  .sec-head h2{font-size:24px}
+  .backdrop{position:fixed;inset:var(--topbar) 0 0;background:rgba(9,12,18,.44);z-index:65;display:none}
+  .backdrop.on{display:block}
+  .tabbar{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:64;background:var(--surface);
+    border-top:1px solid var(--border);padding:5px 4px calc(5px + env(safe-area-inset-bottom))}
+  .tabbar a{flex:1;text-align:center;padding:6px 2px;color:var(--muted);font-size:10.5px;font-weight:700;border-radius:9px}
+  .tabbar a:hover{text-decoration:none}
+  .tabbar a.active{color:var(--b-fg);background:var(--b-bg)}
+  .tabbar a span{display:block;font-size:16px;line-height:1.35}
+  main{padding-bottom:150px}
+}
+@media (max-width:560px){
+  body{font-size:15px}
+  .quickgrid{grid-template-columns:1fr}
+  .g4{grid-template-columns:1fr}
+  .brand small{display:none}
+  .search{max-width:none}
+}
+@media print{
+  .topbar,.sidebar,.tabbar,.copy,.chips,.helper,.ck-tools,.quickgrid,.backdrop{display:none!important}
+  .layout{grid-template-columns:1fr}
+  main{padding:0}
+  details.acc{break-inside:avoid}
+  details.acc>summary .chev{display:none}
+  .card,.tw,.ck-list,.figwrap{box-shadow:none}
+  a{color:inherit}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">본문 바로가기</a>
+
+<header class="topbar">
+  <button class="iconbtn" id="menuBtn" aria-label="메뉴 열기" aria-expanded="false">☰</button>
+  <a class="brand" href="#home"><span class="dot" aria-hidden="true"></span>
+    <span>AI 연구·행정 인프라<small>맥 · 연구실 본체 · 노트북 통합 가이드</small></span></a>
+  <div class="tb-spacer"></div>
+  <div class="search" id="searchWrap">
+    <div class="field"><span class="fi" aria-hidden="true">⌕</span>
+      <input type="search" id="q" placeholder="검색 (⌘K)" autocomplete="off" role="combobox"
+             aria-expanded="false" aria-controls="results" aria-label="문서 검색"></div>
+    <div class="results" id="results" role="listbox"></div>
+  </div>
+  <div class="lang" role="group" aria-label="언어 선택 / Language">
+    <span class="on" aria-current="true">KO</span><a href="index-en.html" hreflang="en" title="English version">EN</a>
+  </div>
+  <button class="iconbtn" id="themeBtn" aria-label="다크모드 전환">◐</button>
+</header>
+
+<div class="backdrop" id="backdrop"></div>
+
+<div class="layout">
+<nav class="sidebar" id="sidebar" aria-label="문서 목차">
+  <div class="sb-group">
+    <a class="sb-link" href="#home" data-nav="home"><span class="n">1</span>홈 · 한눈에 보기</a>
+    <a class="sb-sub" href="#h-layer">두 레이어 구조</a>
+    <a class="sb-sub" href="#h-map">기기 배치도</a>
+    <a class="sb-sub" href="#h-remote">세 갈래 원격 경로</a>
+  </div>
+  <div class="sb-group">
+    <a class="sb-link" href="#understand" data-nav="understand"><span class="n">2</span>시스템 이해</a>
+    <a class="sb-sub" href="#u-rel">두 시스템의 관계</a>
+    <a class="sb-sub" href="#u-cost">인증 · 비용 구조</a>
+    <a class="sb-sub" href="#u-route">모델 라우팅</a>
+    <a class="sb-sub" href="#u-mcp">MCP 3종 (43개)</a>
+    <a class="sb-sub" href="#u-kb">지식베이스 · SaaS</a>
+    <a class="sb-sub" href="#u-sec">보안 · 데이터 보호</a>
+  </div>
+  <div class="sb-group">
+    <a class="sb-link" href="#choose" data-nav="choose"><span class="n">3</span>언제 뭘 쓰나</a>
+    <a class="sb-sub" href="#c-helper">판단 도우미</a>
+    <a class="sb-sub" href="#c-device">기기별 실제 역할</a>
+    <a class="sb-sub" href="#c-swap">같은 맥에서 갈아타기</a>
+    <a class="sb-sub" href="#c-flow">표준 워크플로</a>
+    <a class="sb-sub" href="#c-area">업무 영역별 활용</a>
+  </div>
+  <div class="sb-group">
+    <a class="sb-link" href="#build" data-nav="build"><span class="n">4</span>구축 가이드</a>
+    <a class="sb-sub" href="#b-principle">시작 전 원칙</a>
+    <a class="sb-sub" href="#b-where">무엇을 어느 기기에</a>
+    <a class="sb-sub" href="#b-trackb">프리덤 트랙 · 공통 기반</a>
+    <a class="sb-sub" href="#b-tracka">에르메스 트랙 · 비서 레이어</a>
+    <a class="sb-sub" href="#b-check">점검 체크리스트</a>
+  </div>
+  <div class="sb-group">
+    <a class="sb-link" href="#practice" data-nav="practice"><span class="n">5</span>실전 활용</a>
+    <a class="sb-sub" href="#p-folder">폴더 구조 · 지정 요령</a>
+    <a class="sb-sub" href="#p-cases">실전 사례 16건</a>
+    <a class="sb-sub" href="#p-cheat">명령 공식 치트시트</a>
+    <a class="sb-sub" href="#p-habit">비용 · 안전 습관</a>
+  </div>
+</nav>
+
+<main id="main">
+
+<!-- ============================ 홈 ============================ -->
+<section class="section" id="home" data-sec="홈">
+<div class="wrap-wide">
+
+<div class="hero">
+  <div class="badge-row" style="margin-bottom:14px">
+    <span class="badge bg-a">에르메스 · 비서</span>
+    <span class="badge bg-b">프리덤 · 작업대</span>
+    <span class="badge bg-c">공통 · 전 기기</span>
+  </div>
+  <h1>공통 기반 위에 비서 한 겹</h1>
+  <p class="sub">모든 기기에 <strong>동일한 AI 작업 환경 — 프리덤(Freedom)</strong>을 깔아두고,
+    맥에만 <strong>비서 레이어 — 에르메스(Hermes Agent)</strong>를 한 겹 더 올린 구조입니다.
+    서로 다른 두 시스템을 따로 쓰는 것이 아닙니다.</p>
+  <div class="meta">
+    <span class="pill">v4.0 · 2026-08-30</span>
+    <span class="pill">macOS · Windows</span>
+    <span class="pill">MCP 43개 도구</span>
+    <span class="pill">실전 사례 16건</span>
+  </div>
+</div>
+
+<h3 class="blk" id="h-layer">두 레이어 구조</h3>
+<div class="figwrap fig-md">
+<svg viewBox="0 0 900 330" role="img" aria-label="프리덤 공통 기반 위에 맥에만 에르메스 비서 레이어가 얹힌 구조도">
+  <rect x="40" y="34" width="274" height="118" rx="14" class="sv-box-a" stroke-width="1.5"/>
+  <text x="177" y="63" text-anchor="middle" class="sv-ta" font-size="15">에르메스 · 비서 레이어</text>
+  <text x="177" y="88" text-anchor="middle" class="sv-t" font-size="14">Hermes Agent</text>
+  <text x="177" y="110" text-anchor="middle" class="sv-2" font-size="13">+ 텔레그램 · 슬랙 게이트웨이</text>
+  <text x="177" y="133" text-anchor="middle" class="sv-m" font-size="12">던져놓으면 알아서 처리하고 보고</text>
+
+  <path d="M177 152 L177 178" class="sv-ln-a" marker-end="url(#arrA)"/>
+  <text x="196" y="172" class="sv-ta" font-size="12">맥에만 한 겹 더</text>
+
+  <rect x="40" y="182" width="820" height="118" rx="14" class="sv-box-b" stroke-width="1.5"/>
+  <line x1="313" y1="182" x2="313" y2="300" stroke="var(--b-bd)" stroke-width="1" class="sv-dash"/>
+  <line x1="586" y1="182" x2="586" y2="300" stroke="var(--b-bd)" stroke-width="1" class="sv-dash"/>
+  <text x="450" y="211" text-anchor="middle" class="sv-tb" font-size="15">프리덤 · 공통 기반 — 전 기기 동일</text>
+  <text x="450" y="236" text-anchor="middle" class="sv-t" font-size="13.5">Orca / Antigravity + Claude·Gemini 구독</text>
+  <text x="450" y="257" text-anchor="middle" class="sv-2" font-size="12.5">MCP 3종 (43개 도구) · SaaS 연동</text>
+  <text x="177" y="287" text-anchor="middle" class="sv-m" font-size="12.5">맥</text>
+  <text x="450" y="287" text-anchor="middle" class="sv-m" font-size="12.5">연구실 본체</text>
+  <text x="723" y="287" text-anchor="middle" class="sv-m" font-size="12.5">노트북</text>
+  <defs>
+    <marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--a)"/></marker>
+    <marker id="arrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--b)"/></marker>
+    <marker id="arrC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--c)"/></marker>
+  </defs>
+</svg>
+</div>
+<p class="figcap">맥이 다른 점은 오직 하나 — 거기에 Hermes와 메신저 게이트웨이가 얹혀 있어 “비서”로도 부릴 수 있다는 것입니다.</p>
+
+<div class="grid g4" style="margin:20px 0">
+  <div class="stat"><div class="k">MCP 도구</div><div class="v">43<small>개</small></div>
+    <div class="d">kordoc 15 · korean-law 10 · korean-stats 18 — 전 기기 설치</div></div>
+  <div class="stat"><div class="k">프리덤 설치</div><div class="v">3<small>대</small></div>
+    <div class="d">맥 · 연구실 본체 · 노트북 — 실무 능력 동일</div></div>
+  <div class="stat"><div class="k">Hermes 설치</div><div class="v">1<small>대</small></div>
+    <div class="d">맥에만 — 의도된 안전장치</div></div>
+  <div class="stat"><div class="k">원격 경로</div><div class="v">3<small>갈래</small></div>
+    <div class="d">위임 · 원격 조작 · 화면 제어</div></div>
+</div>
+
+<h3 class="blk" id="h-map">기기 배치도</h3>
+<div class="figwrap fig-md">
+<svg viewBox="0 0 900 560" role="img" aria-label="맥, 연구실 본체, 노트북, 스마트폰의 구성과 연결 경로를 나타낸 배치도">
+  <!-- 맥 -->
+  <rect x="40" y="40" width="400" height="212" rx="15" class="sv-box" stroke-width="1.5"/>
+  <rect x="40" y="40" width="400" height="34" rx="15" class="sv-box-a" stroke="none"/>
+  <rect x="40" y="60" width="400" height="14" class="sv-box-a" stroke="none"/>
+  <text x="60" y="63" class="sv-ta" font-size="13">맥 (Mac) — 에르메스와 프리덤을 모두 갖춘 기기</text>
+  <text x="60" y="98" class="sv-t" font-size="15">★ 비서 운용의 본진</text>
+  <text x="60" y="126" class="sv-ta" font-size="12.5">[에르메스] Hermes Agent — Timely / OpenRouter</text>
+  <text x="74" y="147" class="sv-2" font-size="12">└ 텔레그램 · 슬랙 게이트웨이</text>
+  <text x="74" y="167" class="sv-2" font-size="12">└ 연구 보조시스템 위키 · ECC Atlas</text>
+  <text x="60" y="194" class="sv-tb" font-size="12.5">[프리덤] Orca / Antigravity + Claude·Gemini 구독</text>
+  <text x="60" y="222" class="sv-tc" font-size="12.5">[공통] MCP 3종 (43개 도구) + SaaS 연동</text>
+
+  <!-- 본체 -->
+  <rect x="40" y="335" width="400" height="185" rx="15" class="sv-box" stroke-width="1.5"/>
+  <rect x="40" y="335" width="400" height="34" rx="15" class="sv-box-b" stroke="none"/>
+  <rect x="40" y="355" width="400" height="14" class="sv-box-b" stroke="none"/>
+  <text x="60" y="358" class="sv-tb" font-size="13">연구실 본체 — 프리덤</text>
+  <text x="60" y="393" class="sv-t" font-size="15">★ 연구·프로젝트 작업의 주력</text>
+  <text x="60" y="421" class="sv-tb" font-size="12.5">[프리덤] Orca / Antigravity + 구독</text>
+  <text x="60" y="447" class="sv-tc" font-size="12.5">[공통] MCP 3종 + SaaS 연동</text>
+  <text x="60" y="480" class="sv-m" font-size="12.5">Hermes 미설치 — 의도된 안전지대</text>
+  <text x="60" y="503" class="sv-m" font-size="11.5">원고 · 과제 문서 · 분석 작업을 여기서 가장 많이 진행</text>
+
+  <!-- 폰 -->
+  <rect x="620" y="45" width="250" height="152" rx="15" class="sv-box-n" stroke-width="1.5"/>
+  <text x="642" y="80" class="sv-t" font-size="14.5">스마트폰</text>
+  <text x="642" y="110" class="sv-ta" font-size="12">텔레그램 · 슬랙 → 맥 Hermes</text>
+  <text x="642" y="132" class="sv-m" font-size="11.5">사진 · 음성 · 링크 던지고 결과만</text>
+  <text x="642" y="160" class="sv-tb" font-size="12">Orca 모바일 → 본체 Orca</text>
+  <text x="642" y="182" class="sv-m" font-size="11.5">하던 대화를 그대로 이어서</text>
+
+  <!-- 노트북 -->
+  <rect x="620" y="340" width="250" height="180" rx="15" class="sv-box-n" stroke-width="1.5"/>
+  <text x="642" y="375" class="sv-t" font-size="14.5">노트북</text>
+  <text x="642" y="399" class="sv-m" font-size="11.5">프리덤 설치됨 · Hermes 미설치</text>
+  <text x="642" y="428" class="sv-t" font-size="12.5">★ 주로 원격 단말</text>
+  <text x="642" y="453" class="sv-tc" font-size="12">원격 데스크톱으로 본체·맥 조작</text>
+  <text x="642" y="477" class="sv-ta" font-size="12">텔레그램·슬랙으로 Hermes 지시</text>
+  <text x="642" y="501" class="sv-m" font-size="11">자원과 자료가 그쪽에 있으므로</text>
+
+  <!-- 연결선 -->
+  <path d="M615 105 L450 105" class="sv-ln-a" marker-end="url(#arrA)"/>
+  <path d="M624 176 C 552 246 528 322 452 412" class="sv-ln-b" marker-end="url(#arrB)"/>
+  <path d="M615 398 C 548 384 512 316 452 246" class="sv-ln-c sv-dash" marker-end="url(#arrC)"/>
+  <path d="M615 462 L452 462" class="sv-ln-c" marker-end="url(#arrC)"/>
+</svg>
+</div>
+<div class="legend">
+  <span><i style="background:var(--a)"></i>텔레그램·슬랙 → 맥 Hermes <b>(위임)</b></span>
+  <span><i style="background:var(--b)"></i>Orca 모바일 → 본체 Orca <b>(원격 조작)</b></span>
+  <span><i style="background:var(--c)"></i>Chrome Remote Desktop → 맥·본체 <b>(화면 제어)</b></span>
+</div>
+
+<div class="callout cl-tip">
+  <span class="cl-t">노트북에도 프리덤이 있어 직접 작업해도 됩니다</span>
+  다만 실제로는 <strong>본체와 맥에 붙어 일을 시키는 창구</strong>로 쓰는 경우가 훨씬 많습니다.
+  무거운 작업은 본체·맥의 자원을 쓰는 편이 낫고, 자료도 그쪽에 있기 때문입니다.
+</div>
+
+<h3 class="blk" id="h-remote">세 갈래 원격 접속 경로</h3>
+<p>외부에서 접근하는 방법이 셋 있는데, <strong>하는 일이 서로 다릅니다.</strong> 이 구분이 실제 사용에서 가장 중요합니다.</p>
+<div class="grid g3">
+  <div class="card acc-a">
+    <span class="badge bg-a">위임형</span>
+    <h4 style="margin-top:9px">텔레그램 · 슬랙</h4>
+    <p><strong>맥의 Hermes (에르메스)</strong>에 연결. 던져놓으면 알아서 처리하고 보고합니다.</p>
+    <p style="color:var(--muted);font-size:13.4px">영수증 사진·음성 녹음·링크를 보내고 결과만 받을 때.
+      노트북에서도 원격 접속 없이 지시 한 줄로 끝납니다.</p>
+  </div>
+  <div class="card acc-b">
+    <span class="badge bg-b">원격 조작형</span>
+    <h4 style="margin-top:9px">Orca 모바일 앱</h4>
+    <p><strong>본체의 Orca (프리덤)</strong>에 연결. 세션에 붙어 이어서 작업합니다.</p>
+    <p style="color:var(--muted);font-size:13.4px">본체에서 하던 작업을 밖에서 이어가거나 진행 상황을 볼 때.
+      <strong>하던 대화가 그대로 살아 있습니다.</strong></p>
+  </div>
+  <div class="card acc-c">
+    <span class="badge bg-c">화면 제어형</span>
+    <h4 style="margin-top:9px">Chrome Remote Desktop</h4>
+    <p><strong>맥 또는 본체 화면 전체</strong>를 원격 조작합니다.</p>
+    <p style="color:var(--muted);font-size:13.4px">노트북에서 본체·맥에 일을 시킬 때,
+      여러 파일을 눈으로 보며 다뤄야 할 때.</p>
+  </div>
+</div>
+<div class="callout cl-note">
+  <strong>선택 요령:</strong> 지시 한 줄로 끝나는 일이면 <strong>텔레그램</strong>,
+  대화를 주고받아야 하는 일이면 <strong>Orca 모바일</strong>,
+  화면을 봐야 하는 일이면 <strong>원격 데스크톱</strong>.
+  슬랙은 연구실 채널 공유가 필요할 때만 가끔 씁니다.
+</div>
+
+<h3 class="blk">지금 뭘 하려고 하시나요?</h3>
+<div class="quickgrid">
+  <a class="quick" href="#u-cost"><span class="qi">💳</span><div class="qt">비용이 걱정된다</div>
+    <div class="qd">구독 로그인과 API 키의 차이 — 이 시스템 비용의 전부</div></a>
+  <a class="quick" href="#c-helper"><span class="qi">🧭</span><div class="qt">어느 쪽을 쓸지 모르겠다</div>
+    <div class="qd">3초 판단 도우미로 에르메스·프리덤·창구 추천받기</div></a>
+  <a class="quick" href="#build"><span class="qi">🔧</span><div class="qt">처음부터 구축하려 한다</div>
+    <div class="qd">프리덤 트랙 → 에르메스 트랙 순서로 따라가기</div></a>
+  <a class="quick" href="#p-cases"><span class="qi">📚</span><div class="qt">바로 써먹고 싶다</div>
+    <div class="qd">실전 사례 16건과 복사용 프롬프트</div></a>
+</div>
+
+<div class="callout cl-warn hero-warn">
+  <span class="cl-t">⚠ 실무에서 가장 자주 놓치는 3가지</span>
+  <p><strong>① 게이트웨이 상시성</strong> — 터미널을 닫아도 텔레그램이 동작해야 합니다. 자동 실행 등록을 안 하면 외출 중에 비서가 사라집니다.</p>
+  <p><strong>② 백업에서 설정 파일 제외</strong> — 홈 폴더를 통째로 백업하면 API 키가 클라우드에 그대로 올라갑니다.</p>
+  <p style="margin:0"><strong>③ 백업에 위키·ECC Atlas 포함</strong> — 빠뜨리면 연구 자산 전체가 백업 사각지대에 남습니다.</p>
+</div>
+
+</div>
+</section>
+
+<!-- ============================ 시스템 이해 ============================ -->
+<section class="section" id="understand" data-sec="시스템 이해">
+<div class="wrap">
+
+<div class="sec-head">
+  <div class="sec-kicker">01 · 시스템 구성 정리 (정본)</div>
+  <h2>시스템 이해</h2>
+  <p class="lede">모델명·경로·구성 정보는 이 섹션을 기준으로 합니다.
+    다른 섹션의 설명이 다르면 여기가 맞습니다.</p>
+</div>
+
+<h3 class="blk" id="u-rel">두 시스템의 관계</h3>
+<div class="tw">
+<table>
+<thead><tr><th class="nw">항목</th>
+  <th>프리덤 — 공통 기반 (작업대)</th>
+  <th>에르메스 — 비서 레이어</th></tr></thead>
+<tbody>
+<tr><td class="nw"><strong>설치 기기</strong></td><td><strong>맥 · 연구실 본체 · 노트북 (전부)</strong></td><td><strong>맥에만</strong></td></tr>
+<tr><td class="nw"><strong>핵심 소프트웨어</strong></td><td>Orca / Antigravity</td><td>Hermes Agent</td></tr>
+<tr><td class="nw"><strong>모델 · 인증</strong></td><td>Claude 구독 · Gemini 구독 (로그인)</td><td>Timely → 소진 시 OpenRouter (API)</td></tr>
+<tr><td class="nw"><strong>과금</strong></td><td><strong>정액 (추가 과금 없음)</strong></td><td>크레딧 · 종량제</td></tr>
+<tr><td class="nw"><strong>MCP 3종</strong></td><td><strong>전 기기에 설치됨</strong></td><td>Hermes에도 연동</td></tr>
+<tr><td class="nw"><strong>작동 방식</strong></td><td>내가 직접 지시하고 결과를 확인</td><td><strong>위임 — 알아서 처리하고 보고</strong></td></tr>
+<tr><td class="nw"><strong>원격 접속</strong></td><td>Orca 모바일 앱 → 본체의 Orca</td><td>텔레그램 · 슬랙 → 맥의 Hermes</td></tr>
+</tbody></table>
+</div>
+<div class="callout cl-note">
+  <strong>한 줄 정리:</strong> 맥에서도 프리덤을 그대로 쓸 수 있습니다.
+  맥이 다른 점은 오직 하나 — <strong>거기에 Hermes와 메신저 게이트웨이가 얹혀 있어 “비서”로도 부릴 수 있다</strong>는 것입니다.
+</div>
+
+<div class="grid g2" style="margin-top:16px">
+<div class="callout cl-warn" style="margin:0">
+  <span class="cl-t">⚠ 왜 Hermes는 맥에만 두는가 — 데이터 손실 방지</span>
+  <p>Hermes Agent는 <strong>파일을 스스로 만들고 고치고 지울 수 있는 자율 에이전트</strong>입니다.
+    강력한 만큼 의도치 않은 파일 조작이 일어날 여지도 함께 존재합니다.</p>
+  <p>그래서 <strong>자율 실행 권한은 맥 한 대에만 두고, 연구실 본체와 노트북은 사람이 확인하며 작업하는 안전지대로 남겨둡니다.</strong></p>
+  <p style="margin:0">이것은 기능의 한계가 아니라 <strong>의도된 안전장치</strong>입니다.
+    본체·노트북에도 MCP 3종이 다 깔려 있어 <strong>실무 능력에는 차이가 없으며</strong>,
+    다만 “알아서 처리하는” 자동화만 맥으로 한정한 것입니다.</p>
+</div>
+<div class="callout cl-tip" style="margin:0">
+  <span class="cl-t">💡 왜 MCP를 전 기기에 까는가</span>
+  <p><code>kordoc</code> · <code>korean-law</code> · <code>korean-stats</code>는
+    <strong>Claude와의 궁합이 특히 좋습니다.</strong></p>
+  <p style="margin:0">프리덤이 Claude 구독 기반이므로,
+    <strong>모든 기기에서 한글 문서·법령·통계 도구를 그대로 쓸 수 있도록</strong> 전 기기에 설치해 두었습니다.
+    어느 컴퓨터 앞에 앉아도 동일한 도구가 손에 있습니다.</p>
+</div>
+</div>
+
+<h3 class="blk" id="u-cost">인증 · 비용 구조 <span class="badge bg-w plain" style="font-size:11px;vertical-align:.3em">가장 중요</span></h3>
+<p><strong>“구독 중이면 CLI에서도 공짜”가 모든 모델에 통하지 않습니다.</strong>
+  이 차이가 에르메스·프리덤 두 레이어를 나눈 비용상의 근거입니다.</p>
+<div class="tw">
+<table>
+<thead><tr><th class="nw">모델</th><th>Hermes(터미널)에서의 인증</th><th class="nw">비용</th></tr></thead>
+<tbody>
+<tr><td class="nw"><strong>ChatGPT (OpenAI)</strong></td>
+  <td><strong>구독 계정 로그인 인증으로 사용 가능</strong></td>
+  <td class="nw"><span class="badge bg-c">구독료 내</span></td></tr>
+<tr><td class="nw"><strong>Claude (Anthropic)</strong></td>
+  <td>구독 인증 <strong>불가</strong> → API 키 필요</td>
+  <td class="nw"><span class="badge bg-w">종량 과금</span></td></tr>
+<tr><td class="nw"><strong>Gemini (Google)</strong></td>
+  <td>구독 인증 <strong>불가</strong> → API 키 필요</td>
+  <td class="nw"><span class="badge bg-w">종량 과금</span></td></tr>
+<tr><td class="nw"><strong>Grok (xAI)</strong></td>
+  <td>구독 인증 <strong>불가</strong> → API 키 필요</td>
+  <td class="nw"><span class="badge bg-w">종량 과금</span></td></tr>
+</tbody></table>
+</div>
+<div class="callout cl-b">
+  <span class="cl-t">💡 그래서 Claude·Gemini를 오래 쓰는 작업은 같은 맥에서라도 프리덤으로 엽니다</span>
+  같은 모델·같은 컴퓨터인데 <strong>인증 방식만 바꾸면 정액</strong>이 됩니다.
+  이것이 맥에 두 레이어를 모두 둔 실질적 이유입니다.
+</div>
+
+<h3 class="blk" id="u-route">모델 조달 경로와 라우팅</h3>
+<p>Hermes는 두 공급원을 <strong>전환(Failover)하며</strong> 사용합니다.</p>
+<div class="grid g2">
+  <div class="card acc-c">
+    <div class="badge-row"><span class="badge bg-c">1순위</span><span class="badge bg-c plain">평시 주 경로</span></div>
+    <h4 style="margin-top:10px">전남대학교 Timely 서비스</h4>
+    <p>대학 지원 인프라. 크레딧 범위 내에서 비용 부담 없이 사용하므로 평시 기본 경로입니다.</p>
+    <div class="tw" style="margin:12px 0 0">
+    <table class="compact"><tbody>
+      <tr><td>장문 분석 · 심층 검토</td><td class="nw"><code>claude-opus-4.7</code></td></tr>
+      <tr><td>일반 작업</td><td class="nw"><code>gpt-5.5</code></td></tr>
+      <tr><td>코딩 · 개발</td><td class="nw"><code>gpt-5.1-codex-mini</code></td></tr>
+      <tr><td>고속 QA · 통계/데이터 분석</td><td class="nw"><code>gemini-3-flash</code></td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="card acc-a">
+    <div class="badge-row"><span class="badge bg-a">2순위</span><span class="badge bg-a plain">크레딧 소진 시</span></div>
+    <h4 style="margin-top:10px">OpenRouter</h4>
+    <p>크레딧 기반 유연한 모델 라우팅. 저비용 경량 모델 위주로 전환하여 지출을 통제합니다.</p>
+    <div class="tw" style="margin:12px 0 0">
+    <table class="compact"><tbody>
+      <tr><td>기본 · 일상 질의</td><td class="nw"><code>deepseek/deepseek-v4-flash-0731</code></td></tr>
+      <tr><td>추론 · 리서치</td><td class="nw"><code>google/gemini-3.7-flash</code></td></tr>
+      <tr><td>실시간 웹 탐색</td><td class="nw"><code>grok-4.3</code></td></tr>
+    </tbody></table></div>
+  </div>
+</div>
+<div class="callout cl-note">
+  <strong>2026-08-30 기준 확인 완료.</strong> 다만 모델 ID는 공급사 정책에 따라 바뀔 수 있으므로,
+  연결이 실패하면 OpenRouter / Timely 콘솔의 모델 목록과 대조하십시오.
+</div>
+
+<h4 class="blk">Hermes 조작 창구 (셋 다 사용)</h4>
+<div class="tw">
+<table class="compact">
+<thead><tr><th class="nw">창구</th><th>어울리는 작업</th></tr></thead>
+<tbody>
+<tr><td class="nw"><strong>Orca</strong></td><td>대화형으로 길게 주고받는 작업</td></tr>
+<tr><td class="nw"><strong>Antigravity</strong></td><td>코드·스크립트가 얽힌 작업</td></tr>
+<tr><td class="nw"><strong>터미널</strong> (macOS 기본 Terminal.app)</td><td>명령 위주의 빠른 처리, 배치 작업</td></tr>
+</tbody></table>
+</div>
+<div class="callout cl-note" style="margin-top:6px">
+  <strong>기본 환경:</strong> macOS (Apple Silicon / Darwin ARM64) ·
+  작업 디렉토리 기준 <code>/Users/bylee</code> ·
+  에이전트 프레임워크 Hermes Agent (Nous Research)
+</div>
+
+<h4 class="blk">메신저 게이트웨이 <span class="badge bg-a">에르메스 레이어의 핵심 가치</span></h4>
+<div class="grid g2">
+  <div class="card"><h4>Telegram <span class="badge bg-a plain">주력</span></h4>
+    <p style="margin:0">스마트폰으로 사진(영수증)·음성(회의 녹음)·웹 링크를 전달하면
+      <strong>비서가 알아서 처리하고 결과를 보고</strong>합니다.</p></div>
+  <div class="card"><h4>Slack <span class="badge bg-a plain">가끔</span></h4>
+    <p style="margin:0">연구실 채널·DM을 통한 호출 및 결과 공유에 씁니다.</p></div>
+</div>
+
+<h3 class="blk" id="u-mcp">MCP 서버 3종 — 전 기기 공통 <span class="badge bg-c">43개 도구</span></h3>
+<p>Claude와의 궁합이 좋아 <strong>맥·본체·노트북 모두에 설치</strong>되어 있으며,
+  맥에서는 Hermes에도 함께 연동되어 있습니다.</p>
+
+<details class="acc" open>
+  <summary><span class="num">15</span><span class="sum-t">kordoc — 한국 문서 처리
+    <span class="sum-sub">한글(HWP·HWPX), PDF, DOCX, XLSX 등 한국 공공·학술 문서의 포맷 감지·파싱·서식 보존 패치</span></span>
+    <span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="tw"><table class="compact"><tbody>
+    <tr><td class="nw"><code>patch_document</code></td><td>원본 HWPX/HWP 서식을 손상시키지 않고 편집 내용만 반영</td></tr>
+    <tr><td class="nw"><code>place_seal</code></td><td>도장/서명 이미지를 “(인)” 또는 “서명” 앵커 위에 부유 배치</td></tr>
+    <tr><td class="nw"><code>redact_document</code></td><td>주민번호·전화번호·계좌번호 등 개인정보 서식 보존 마스킹</td></tr>
+    <tr><td class="nw"><code>fill_form</code> / <code>extract_profile</code> / <code>render_document</code></td><td>서식 자동 채우기 및 렌더링</td></tr>
+    </tbody></table></div>
+  </div>
+</details>
+
+<details class="acc">
+  <summary><span class="num">10</span><span class="sum-t">korean-law — 법령 · 판례 · 조례
+    <span class="sum-sub">국가법령정보센터 기반 법령·조례·행정규칙·판례 통합 조회</span></span>
+    <span class="chev">›</span></summary>
+  <div class="acc-body">
+    <p style="color:var(--text2);font-size:14.3px"><strong>핵심 도구:</strong>
+      <code>search_law</code> / <code>get_law_text</code> / <code>legal_research</code> / <code>legal_analysis</code></p>
+  </div>
+</details>
+
+<details class="acc">
+  <summary><span class="num">18</span><span class="sum-t">korean-stats — 국가통계포털 KOSIS
+    <span class="sum-sub">KOSIS Open API(KOSIS_API_KEY 연동) 기반 통계 실시간 조회 및 시계열 분석</span></span>
+    <span class="chev">›</span></summary>
+  <div class="acc-body">
+    <p style="color:var(--text2);font-size:14.3px"><strong>핵심 도구:</strong>
+      <code>quick_stats</code> / <code>quick_trend</code> / <code>chain_compare_regions</code> / <code>fetch_kosis_excel</code></p>
+  </div>
+</details>
+
+<h3 class="blk" id="u-kb">연구 지식베이스 · SaaS 연동</h3>
+
+<h4 class="blk">연구 지식베이스 — 맥 상주 <span class="badge bg-a">맥에만</span></h4>
+<div class="grid g2">
+  <div class="card acc-a"><h4>📚 연구 보조시스템 위키 (LLM Wiki)</h4>
+    <p style="margin:0">읽은 문헌을 축적하고 상호 링크망을 형성하는 한/영 지식베이스</p></div>
+  <div class="card acc-a"><h4>🧭 ECC Atlas (Knowledge Atlas)</h4>
+    <p style="margin:0">ECC·자기치유 재료 분야 연구 지식을 지도형으로 구조화한 아카이브</p></div>
+</div>
+<div class="callout cl-note">
+  <p><strong>왜 맥에 두는가:</strong> 문헌을 읽을 때마다 <strong>Hermes가 자동으로 축적·색인·상호링크</strong>하는 작업이
+    상시 돌아가야 하는데, 그 자동화가 가능한 곳이 맥뿐이기 때문입니다.
+    또한 Claude·Codex 최적화 도구들이 macOS에서 가장 안정적으로 동작합니다.</p>
+  <p style="margin:0"><strong>다른 기기에서 보려면:</strong> Chrome Remote Desktop으로 맥에 접속하거나, 텔레그램으로 물어보십시오.</p>
+</div>
+
+<h4 class="blk">생산성 SaaS &amp; 클라우드 <span class="badge bg-c">전 기기 공통</span></h4>
+<p>MCP 3종과 마찬가지로 <strong>SaaS 연동도 맥·연구실 본체·노트북에 동일하게 구성</strong>되어 있습니다.</p>
+<div class="tw">
+<table>
+<thead><tr><th class="nw">서비스</th><th>연동 방식</th><th>활용</th></tr></thead>
+<tbody>
+<tr><td class="nw"><strong>Google Drive</strong></td><td><code>rclone</code> 기반 동기화 백업 (<code>gdrive:</code> ↔ <code>/Volumes/g_drive</code>)</td><td>연구 자료 백업 및 기기 간 공유</td></tr>
+<tr><td class="nw"><strong>NotebookLM</strong></td><td><code>notebooklm-mcp-cli</code> 연동</td><td>대규모 문헌 기반 질의응답 및 오디오 오버뷰</td></tr>
+<tr><td class="nw"><strong>Notion</strong></td><td>학술 연구·강의용 데이터베이스 연계</td><td><code>Notion_연구논문관리</code> 대시보드</td></tr>
+<tr><td class="nw"><strong>Gmail / Google Calendar</strong></td><td>일정·연락망 연계</td><td>학술 일정, 세미나, 회의 관리</td></tr>
+</tbody></table>
+</div>
+<div class="callout cl-tip">
+  <span class="cl-t">💡 기기 간 파일 공유의 통로</span>
+  <p>연구 위키·ECC Atlas는 맥에만 있지만, <strong>Google Drive가 전 기기에 연결되어 있으므로
+    본체·노트북에서 작업할 파일은 드라이브를 경유해 주고받으면 됩니다.</strong></p>
+  <p style="margin:0"><strong>다만 “백업”의 관점에서는 맥이 여전히 핵심입니다.</strong>
+    연구 위키·ECC Atlas·논문·과제 자료가 맥에 모여 있으므로, 맥의 백업이 곧 전체 연구 자산의 백업입니다.</p>
+</div>
+
+<h4 class="blk">접속 및 제어 창구 총괄</h4>
+<div class="tw">
+<table>
+<thead><tr><th class="nw">창구</th><th class="nw">레이어</th><th class="nw">기기</th><th class="nw">빈도</th><th>용도</th></tr></thead>
+<tbody>
+<tr><td class="nw"><strong>Orca</strong></td><td class="nw"><span class="badge bg-a plain">에르메스</span> <span class="badge bg-b plain">프리덤</span></td><td class="nw">전 기기</td><td class="nw">상시</td><td>대화형 작업 (맥에서는 Hermes 조작도 가능)</td></tr>
+<tr><td class="nw"><strong>Antigravity</strong></td><td class="nw"><span class="badge bg-a plain">에르메스</span> <span class="badge bg-b plain">프리덤</span></td><td class="nw">전 기기</td><td class="nw">상시</td><td>코드·IDE 작업</td></tr>
+<tr><td class="nw"><strong>터미널</strong></td><td class="nw"><span class="badge bg-a plain">에르메스</span></td><td class="nw">맥</td><td class="nw">상시</td><td>명령 위주 고속 처리</td></tr>
+<tr><td class="nw"><strong>Telegram</strong></td><td class="nw"><span class="badge bg-a plain">에르메스</span></td><td class="nw">스마트폰</td><td class="nw"><strong>주력 위임</strong></td><td>사진·음성·링크 전달 → 알아서 처리</td></tr>
+<tr><td class="nw"><strong>Slack</strong></td><td class="nw"><span class="badge bg-a plain">에르메스</span></td><td class="nw">스마트폰·PC</td><td class="nw">가끔</td><td>연구실 채널 공유 및 결과 수신</td></tr>
+<tr><td class="nw"><strong>Orca 모바일 앱</strong></td><td class="nw"><span class="badge bg-b plain">프리덤</span></td><td class="nw">스마트폰</td><td class="nw">상시</td><td><strong>본체의 Orca에 접속</strong>하여 작업 이어가기</td></tr>
+<tr><td class="nw"><strong>Chrome Remote Desktop</strong></td><td class="nw"><span class="badge bg-c plain">에르메스·프리덤</span></td><td class="nw">전 기기</td><td class="nw">필요 시</td><td>맥·본체 화면을 통째로 원격 조작</td></tr>
+</tbody></table>
+</div>
+
+<h3 class="blk" id="u-sec">보안 및 데이터 보호 원칙</h3>
+
+<h4 class="blk">비밀정보 취급</h4>
+<p>API 키·봇 토큰이 유출되면 <strong>타인이 내 크레딧으로 과금을 발생시키거나 에이전트를 원격 조작</strong>할 수 있습니다.</p>
+<div class="od">
+  <div class="od-row"><span class="od-n">1</span><div class="od-b"><b>파일 권한 제한</b> — 키가 담긴 설정 파일은 본인만 읽도록 제한 (<code>chmod 600</code>)</div></div>
+  <div class="od-row"><span class="od-n">2</span><div class="od-b"><b>클라우드 동기화 제외</b> — 홈 디렉토리를 통째로 백업하지 않습니다. 설정 파일이 그대로 올라갑니다.</div></div>
+  <div class="od-row"><span class="od-n">3</span><div class="od-b"><b>문서에 키를 적지 않기</b> — 어떤 정리 문서·메신저·질문창에도 실제 키 값을 남기지 않습니다.</div></div>
+  <div class="od-row"><span class="od-n">4</span><div class="od-b"><b>KOSIS 키는 전 기기에 있습니다</b> — MCP를 3대에 설치했으므로 <strong>기기 3대 모두에서</strong> 위 원칙을 지켜야 합니다.</div></div>
+</div>
+
+<h4 class="blk">데이터 손실 방지 — 이중 방어</h4>
+<div class="grid g2">
+  <div class="card acc-a"><span class="badge bg-a">1차 방어선</span>
+    <h4 style="margin-top:9px">자율 실행 권한 한정</h4>
+    <p style="margin:0">Hermes를 맥 한 대로 한정. 본체·노트북은 사람이 확인하며 작업합니다.</p></div>
+  <div class="card acc-c"><span class="badge bg-c">2차 방어선</span>
+    <h4 style="margin-top:9px">백업 집중 관리</h4>
+    <p style="margin:0">연구 자산(위키·ECC Atlas·논문·과제 자료)이 모두 맥에 있으므로,
+      <strong>맥의 백업이 곧 전체 연구 자산의 백업</strong>입니다.</p></div>
+</div>
+<div class="callout cl-warn">
+  <span class="cl-t">⚠ 주의 — 자산 집중은 그대로입니다</span>
+  권한을 나눠 두었어도 <strong>자산이 맥 한 곳에 집중되어 있다는 점은 변하지 않습니다.</strong>
+  맥의 백업이 끊기면 그것이 곧 단일 실패 지점이 됩니다.
+  <a href="#b-check">최종 점검표</a>의 백업 항목을 주기적으로 확인하십시오.
+</div>
+
+<h4 class="blk">아키텍처 총괄 요약</h4>
+<div class="callout cl-note" style="font-size:14.6px;line-height:1.8">
+맥·연구실 본체·노트북 전 기기에 Orca·Antigravity와 Claude·Gemini 구독,
+한국 특화 MCP 3종(43개 도구), 그리고 Google Drive·NotebookLM·Notion·Gmail/Calendar SaaS 연동을
+동일하게 구축하여 어디서든 같은 작업 능력을 확보(<strong>프리덤</strong>)하고,
+맥에만 Hermes Agent와 텔레그램·슬랙 게이트웨이를 한 겹 더 올려 “위임형 비서”로 운용(<strong>에르메스</strong>).
+원격 경로는 셋 — 텔레그램·슬랙으로 맥의 비서에게 위임하고, Orca 모바일로 본체 세션에 붙어 작업을 이어가며,
+Chrome Remote Desktop으로 화면을 통째로 제어. 모델은 Timely를 우선 쓰고 소진 시 OpenRouter로 전환하되,
+Claude·Gemini를 길게 쓸 작업은 같은 맥에서라도 구독 인증인 프리덤으로 열어 정액으로 처리.
+— <strong>자동화의 편익, 기기 간 능력의 균일성, 데이터 안전을 동시에 확보한 개인 AI 연구·행정 인프라.</strong>
+</div>
+
+</div>
+</section>
+
+<!-- ============================ 언제 뭘 쓰나 ============================ -->
+<section class="section" id="choose" data-sec="언제 뭘 쓰나">
+<div class="wrap">
+
+<div class="sec-head">
+  <div class="sec-kicker">02 · 일상 및 학술활동 활용 체계</div>
+  <h2>언제 뭘 쓰나</h2>
+  <p class="lede">MCP 3종과 SaaS 연동이 세 기기 전부에 있으므로 <strong>실무 능력에는 차이가 없습니다.</strong>
+    판단 기준은 “어느 기기냐”가 아니라 <strong>“어떤 방식으로 일할 것이냐”</strong>입니다.</p>
+</div>
+
+<div class="callout cl-note" style="font-size:15.5px;text-align:center;padding:18px">
+  <strong>핵심 질문 — 내가 옆에서 보면서 할 일인가(→ 프리덤), 맡겨놓고 결과만 받을 일인가(→ 에르메스)</strong>
+</div>
+
+<h3 class="blk" id="c-helper">판단 도우미</h3>
+<p>두세 번만 고르면 어느 쪽을 열지 알려드립니다.</p>
+<div class="helper" id="helper">
+  <div class="hsteps" id="hsteps" aria-hidden="true"><i class="hstep on"></i><i class="hstep"></i></div>
+  <div id="hbody"></div>
+  <div class="ck-tools" id="hreset" style="display:none"><button class="mini" id="hresetBtn">다시 고르기</button></div>
+</div>
+
+<h3 class="blk" id="c-device">기기별 실제 역할</h3>
+<p><strong>설치 구성과 실제로 손이 가는 방식은 다릅니다.</strong>
+  세 기기 모두에 프리덤이 깔려 있지만, 손이 가는 방식은 기기마다 뚜렷이 다릅니다.</p>
+<div class="tw">
+<table>
+<thead><tr><th class="nw">기기</th><th class="nw">설치 구성</th><th>실제로 하는 일</th></tr></thead>
+<tbody>
+<tr><td class="nw"><strong>🖥️ 맥</strong></td><td class="nw"><span class="badge bg-a plain">에르메스</span> <span class="badge bg-b plain">프리덤</span></td>
+  <td><strong>비서 운용의 본진.</strong> Hermes에 반복 업무를 맡기고, 텔레그램·슬랙 지시를 받아 처리.
+    연구 위키·ECC Atlas 축적. 프리덤으로 열어 긴 작업도 수행</td></tr>
+<tr><td class="nw"><strong>🖥️ 연구실 본체</strong></td><td class="nw"><span class="badge bg-b plain">프리덤</span></td>
+  <td><strong>연구·프로젝트 작업의 주력.</strong> 논문 원고, 과제 문서, 분석 작업을 여기서 가장 많이 진행</td></tr>
+<tr><td class="nw"><strong>💻 노트북</strong></td><td class="nw"><span class="badge bg-b plain">프리덤</span> <span style="color:var(--muted);font-size:11.5px">설치는 됨</span></td>
+  <td><strong>주로 원격 단말로 사용.</strong> Chrome Remote Desktop으로 본체·맥에 접속해 작업시키고,
+    노트북의 텔레그램·슬랙으로 Hermes에 지시</td></tr>
+<tr><td class="nw"><strong>📱 스마트폰</strong></td><td class="nw">—</td>
+  <td><strong>Orca 모바일</strong>로 본체 작업 이어가기 · <strong>텔레그램/슬랙</strong>으로 Hermes에 위임</td></tr>
+</tbody></table>
+</div>
+
+<h4 class="blk">본체 작업을 스마트폰으로 이어받기</h4>
+<div class="figwrap fig-sm">
+<svg viewBox="0 0 900 250" role="img" aria-label="연구실 본체 작업을 스마트폰 Orca 모바일 또는 노트북 원격 데스크톱으로 이어받는 흐름도">
+  <rect x="30" y="66" width="290" height="118" rx="14" class="sv-box-b" stroke-width="1.5"/>
+  <text x="175" y="106" text-anchor="middle" class="sv-t" font-size="14.5">연구실 본체 Orca</text>
+  <text x="175" y="132" text-anchor="middle" class="sv-tb" font-size="13">에서 작업 중</text>
+  <text x="175" y="158" text-anchor="middle" class="sv-m" font-size="11.5">원고 · 과제 문서 · 분석</text>
+
+  <path d="M324 106 C 400 96 420 70 476 62" class="sv-ln-b" marker-end="url(#arrB)"/>
+  <path d="M324 146 C 400 156 420 182 476 190" class="sv-ln-c" marker-end="url(#arrC)"/>
+
+  <rect x="482" y="18" width="392" height="92" rx="13" class="sv-box-n" stroke-width="1.5"/>
+  <text x="504" y="48" class="sv-tb" font-size="13.5">스마트폰 Orca 모바일</text>
+  <text x="504" y="72" class="sv-t" font-size="13">대화 맥락 그대로 이어서 진행</text>
+  <text x="504" y="94" class="sv-m" font-size="11.5">이동 중 · 학회장 · 강의 사이</text>
+
+  <rect x="482" y="140" width="392" height="92" rx="13" class="sv-box-n" stroke-width="1.5"/>
+  <text x="504" y="170" class="sv-tc" font-size="13.5">노트북 Chrome Remote Desktop</text>
+  <text x="504" y="194" class="sv-t" font-size="13">본체 화면 통째로 제어</text>
+  <text x="504" y="216" class="sv-m" font-size="11.5">여러 파일을 눈으로 보며 다뤄야 할 때</text>
+</svg>
+</div>
+<div class="callout cl-b">
+  퇴근길이나 학회장에서 <strong>본체에 두고 온 작업을 그 자리에서 이어갈 수 있다</strong>는 것이 이 구조의 실질적 이점입니다.
+  새 지시를 던지는 텔레그램과 달리, <strong>하던 대화가 그대로 살아 있습니다.</strong>
+</div>
+
+<h3 class="blk" id="c-swap">같은 맥 안에서도 갈아탑니다</h3>
+<p><strong>맥에는 에르메스와 프리덤이 모두 있습니다.</strong> 그래서 같은 컴퓨터 앞에 앉아서도 상황에 따라 창을 바꿉니다.</p>
+<div class="tw">
+<table>
+<thead><tr><th>맥에서 하려는 일</th><th class="nw">어느 쪽으로 열까</th><th class="nw">이유</th></tr></thead>
+<tbody>
+<tr><td>Claude로 논문 원고를 3시간 다듬기</td><td class="nw"><span class="badge bg-b">Orca/Antigravity</span></td><td class="nw">구독 인증 → <strong>정액</strong></td></tr>
+<tr><td>같은 일을 Hermes로 시키면?</td><td class="nw"><span class="badge bg-w">권장하지 않음</span></td><td class="nw">같은 모델인데 <strong>돈이 나감</strong></td></tr>
+<tr><td>영수증·회의록·파일 정리 자동화</td><td class="nw"><span class="badge bg-a">Hermes</span></td><td class="nw">짧게 끝나고 파일 조작이 필요</td></tr>
+<tr><td>HWPX 도장·마스킹</td><td class="nw"><span class="badge bg-c">양쪽 다 가능</span></td><td class="nw">자동 저장까지 원하면 A</td></tr>
+</tbody></table>
+</div>
+<div class="callout cl-tip">
+  <span class="cl-t">💡 가장 실용적인 습관 하나</span>
+  <strong>Claude·Gemini를 길게 쓸 일이면 맥에서라도 Orca/Antigravity를 여십시오.</strong>
+  같은 컴퓨터, 같은 모델인데 인증 방식만 바꾸면 종량 과금이 정액으로 바뀝니다.
+</div>
+
+<h3 class="blk" id="c-flow">세부 판단 기준과 표준 워크플로</h3>
+<div class="tw">
+<table>
+<thead><tr><th>상황</th><th class="nw">선택</th><th>이유</th></tr></thead>
+<tbody>
+<tr><td>결과를 한 줄씩 확인하며 다듬어야 한다</td><td class="nw"><span class="badge bg-b">프리덤</span></td><td>자동 파일 조작이 없어 안전하고 통제됨</td></tr>
+<tr><td>원고를 오래 붙잡고 문장을 손봐야 한다</td><td class="nw"><span class="badge bg-b">프리덤</span></td><td>정액이라 시간·분량 부담 없음</td></tr>
+<tr><td>논문 수십 편 등 대용량을 통째로 읽혀야 한다</td><td class="nw"><span class="badge bg-b">프리덤</span></td><td>종량 과금을 피할 수 있음</td></tr>
+<tr><td><strong>Timely 크레딧이 소진되었다</strong></td><td class="nw"><span class="badge bg-b">프리덤으로 이동</span></td><td>비용 통제의 핵심 습관</td></tr>
+<tr><td><strong>컴퓨터 앞에 없다 (이동 중·학회장·자택)</strong></td><td class="nw"><span class="badge bg-a">에르메스 · 텔레그램</span></td><td>사진 한 장만 보내면 알아서 처리</td></tr>
+<tr><td>여러 파일을 한꺼번에 처리·정리·저장해야 한다</td><td class="nw"><span class="badge bg-a">에르메스</span></td><td>파일을 스스로 만들고 옮길 수 있음</td></tr>
+<tr><td>연구 위키나 ECC Atlas에 축적해야 한다</td><td class="nw"><span class="badge bg-a">에르메스</span></td><td>지식베이스가 맥에 상주</td></tr>
+<tr><td>정해진 절차를 반복해야 한다 (영수증·회의 기록·CV)</td><td class="nw"><span class="badge bg-a">에르메스</span></td><td>규칙을 기억하고 자동 적용</td></tr>
+</tbody></table>
+</div>
+
+<h4 class="blk">두 레이어를 이어 쓰는 표준 흐름</h4>
+<div class="figwrap fig-sm">
+<svg viewBox="0 0 900 200" role="img" aria-label="프리덤에서 생각하고 다듬은 뒤 에르메스에게 마무리를 위임하는 표준 워크플로">
+  <rect x="30" y="42" width="360" height="116" rx="14" class="sv-box-b" stroke-width="1.5"/>
+  <text x="210" y="76" text-anchor="middle" class="sv-tb" font-size="14.5">B에서 생각하고 다듬기</text>
+  <text x="210" y="104" text-anchor="middle" class="sv-2" font-size="12.5">원고 검토 · 대량 문헌 통독</text>
+  <text x="210" y="126" text-anchor="middle" class="sv-2" font-size="12.5">논리 검증 · 문장 손질</text>
+  <text x="210" y="148" text-anchor="middle" class="sv-m" font-size="11.5">정액 구독 인증</text>
+
+  <path d="M396 100 L502 100" class="sv-ln-a" marker-end="url(#arrA)"/>
+  <text x="449" y="88" text-anchor="middle" class="sv-m" font-size="11.5">넘기기</text>
+
+  <rect x="510" y="42" width="360" height="116" rx="14" class="sv-box-a" stroke-width="1.5"/>
+  <text x="690" y="76" text-anchor="middle" class="sv-ta" font-size="14.5">A에게 마무리 위임</text>
+  <text x="690" y="104" text-anchor="middle" class="sv-2" font-size="12.5">서식 반영 · 파일 저장</text>
+  <text x="690" y="126" text-anchor="middle" class="sv-2" font-size="12.5">위키 축적 · 백업</text>
+  <text x="690" y="148" text-anchor="middle" class="sv-m" font-size="11.5">맥에서 창만 바꾸거나 텔레그램으로</text>
+</svg>
+</div>
+<div class="callout cl-note">
+  <strong>예시:</strong> 논문 심사 의견서를 Orca(프리덤)에서 충분히 다듬은 뒤, Hermes(에르메스)에게
+  “이걸 공식 양식 HWPX로 만들어 과제 폴더에 저장하고 위키에도 남겨줘”라고 넘깁니다.
+  <strong>“생각하는 일은 프리덤, 손이 가는 일은 에르메스.”</strong>
+</div>
+
+<h3 class="blk" id="c-area">업무 영역별 활용</h3>
+
+<details class="acc">
+  <summary><span class="num">①</span><span class="sum-t">학술 연구 및 논문 집필
+    <span class="sum-sub">다중 AI 교차 검증 · 원고 교정 · 지식 자산화</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <h4 class="blk" style="margin-top:14px">A. 논문 기획 및 다중 AI 교차 검증</h4>
+    <ul>
+      <li><strong>탑티어 저널 관점의 다각도 검토:</strong> 단일 모델에 의존하지 않고 Claude(논리·문체), GPT(구성·완결성), Gemini(데이터·사실관계) 등 3개 이상의 관점으로 병렬 검토.</li>
+      <li><strong>비용 효율적인 분업:</strong> Claude·Gemini 관점의 긴 검토는 <span class="badge bg-b plain">프리덤</span>에서 정액으로 수행,
+        GPT 계열 검토 및 결과 취합·비교표 작성·파일 저장은 <span class="badge bg-a plain">에르메스</span>가 처리</li>
+      <li>영문 제목 후보군 도출 시 학술적 근거와 에디터 관점의 선정 사유를 함께 분석하여 채택.</li>
+    </ul>
+    <h4 class="blk">B. 학술 스타일 준수 원고 교정 (Manuscript Revision &amp; Redline)</h4>
+    <ul>
+      <li><strong>엄격한 학술 문체 가이드 자동 적용:</strong> 피동태 중심(Methods=Past Passive), 인칭 주어 배제, AI 상투어 차단, 숫자-단위 표기법 준수.</li>
+      <li><strong>역할 분담:</strong> 문장을 다듬는 지적 작업은 <span class="badge bg-b plain">프리덤</span>,
+        확정된 교정 사항을 원본 서식 손상 없이 반영하고 저장하는 일은 <span class="badge bg-a plain">에르메스</span>.</li>
+      <li><strong>어디서든 가능:</strong> <code>kordoc</code>이 전 기기에 있으므로 본체·노트북에서도 HWPX 서식 편집이 됩니다.
+        다만 결과를 정해진 폴더에 자동 정리하는 것은 A의 몫입니다.</li>
+    </ul>
+    <h4 class="blk">C. 영구적 지식 자산화 — 연구 보조시스템 위키 &amp; ECC Atlas</h4>
+    <ul>
+      <li>읽은 논문을 맥의 <strong>연구 보조시스템 위키</strong>에 자동 축적하고 상호 링크망을 생성.</li>
+      <li><strong>ECC Atlas</strong>에 자기치유·ECC 분야 지식을 지도 형태로 구조화하여, 제안서의 ‘연구 배경’ 작성 시 즉시 인용.</li>
+      <li>분량이 큰 번역·정합성 검증 초안은 <span class="badge bg-b plain">프리덤</span>에서 만들고,
+        최종 축적·색인은 <span class="badge bg-a plain">에르메스</span>가 담당합니다.</li>
+    </ul>
+    <div class="callout cl-tip" style="margin-bottom:0">
+      <strong>이 두 자산은 맥에만 있습니다.</strong> 문헌을 읽을 때마다 Hermes가 자동으로 축적·색인하는 구조라,
+      그 자동화가 가능한 맥에 두었습니다. 본체·노트북에서 위키를 봐야 한다면 Chrome Remote Desktop으로 접속하거나 텔레그램으로 물어보십시오.
+    </div>
+  </div>
+</details>
+
+<details class="acc">
+  <summary><span class="num">②</span><span class="sum-t">연구실 관리 및 교수 행정
+    <span class="sum-sub">연구비 정산 · CV 갱신 · 한국형 공공 서식</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="callout cl-a" style="margin-top:14px">
+      <strong>이 영역은 대부분 A(비서)의 몫입니다.</strong> 도구는 어느 기기에나 있지만,
+      <strong>정해진 규칙대로 반복하고 알아서 정리·보관하는 일</strong>은 자동화가 있어야 하기 때문입니다.
+    </div>
+    <h4 class="blk">A. 연구비 회의 기록 간단 저장</h4>
+    <ul>
+      <li>결제 영수증에서 <strong>영수증·일시·장소(공대2호관 213호)·회의시간(결제 전 2시간부터 1시간)·회의 내용</strong> 다섯 항목만 뽑아 한 건짜리 기록으로 남깁니다.</li>
+      <li>연구과제별(<code>Projects/</code>) 디렉토리의 <code>회의비기록/</code> 에 영수증 원본과 함께 보관.</li>
+      <li><strong>정산·보고가 실제로 필요해진 시점에 한 번에 불러와</strong> 표나 서류로 가공합니다. 그때그때 회의록을 완성하지 않는 것이 요점입니다.</li>
+    </ul>
+    <h4 class="blk">B. 연구 실적 및 CV 실시간 갱신</h4>
+    <ul>
+      <li>신규 논문 출판 시 Crossref API로 DOI 검증 후 공식 CV(<code>.docx</code>) 최상단에 표준 서식으로 자동 추가 및 백업.</li>
+      <li>공공기관·학교 제출 서류를 메타데이터/텍스트/옵시디언 인덱스로 구조화하여 보관.</li>
+    </ul>
+    <h4 class="blk">C. 한국형 공공/학술 서식 처리 (HWPX/PDF)</h4>
+    <ul>
+      <li>HWPX/PDF 양식의 빈칸 채우기, 도장·서명 앵커 자동 배치, 개인정보 마스킹.</li>
+      <li>설계기준(KDS)·표준시방서(KCS) 개정 작업 시 <code>korean-law</code>로 인용 조항까지 교차 검증.</li>
+      <li><strong>본체·노트북에서도 동일하게 처리 가능</strong> — 급할 때 어느 컴퓨터든 붙잡고 하면 됩니다.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="acc">
+  <summary><span class="num">③</span><span class="sum-t">일상생활 · 원격 제어 · 지식 아카이빙
+    <span class="sum-sub">상황별 원격 경로 선택 · 지식 수집 · 장시간 모니터링</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <h4 class="blk" style="margin-top:14px">A. 원격 경로를 상황에 맞게 고르기</h4>
+    <div class="tw">
+    <table><thead><tr><th>상황</th><th class="nw">경로</th><th>왜</th></tr></thead><tbody>
+      <tr><td>식당에서 나오며 영수증 처리</td><td class="nw"><span class="badge bg-a">텔레그램 → 맥 Hermes</span></td><td>사진 한 장 + 한 줄이면 끝</td></tr>
+      <tr><td>학회장에서 본체 작업을 이어가고 싶다</td><td class="nw"><span class="badge bg-b">Orca 모바일 → 본체</span></td><td>대화 맥락이 그대로 살아 있음</td></tr>
+      <tr><td><strong>노트북으로 본체·맥에 일을 시키고 싶다</strong></td><td class="nw"><span class="badge bg-c">원격 데스크톱</span></td><td>화면 전체 제어 · 자료가 그쪽에 있음</td></tr>
+      <tr><td><strong>노트북에서 비서에게 맡기고 싶다</strong></td><td class="nw"><span class="badge bg-a">노트북 텔레그램·슬랙</span></td><td>원격 접속 없이 지시 한 줄로 끝</td></tr>
+      <tr><td>연구실 구성원과 결과를 공유해야 한다</td><td class="nw"><span class="badge bg-a plain">슬랙 (가끔)</span></td><td>채널에 바로 공유</td></tr>
+    </tbody></table></div>
+    <h4 class="blk">B. 지식 아카이브 (Knowledge Intake)</h4>
+    <ul><li>일상 중 접하는 웹 링크·아티클·학술 자료를 텔레그램으로 던지면,
+      맥의 저장소(<code>Knowledge_Archive/</code>)에 주제별로 자동 분류·인덱싱됩니다.</li></ul>
+    <h4 class="blk">C. 장시간 작업 모니터링</h4>
+    <ul><li>대규모 위키 번역이나 장시간 처리 작업은 <strong>Chrome Remote Desktop</strong>으로 맥 화면을 열어
+      중단 없이 지켜볼 수 있습니다.</li></ul>
+  </div>
+</details>
+
+<details class="acc">
+  <summary><span class="num">≡</span><span class="sum-t">시스템 구성과 활용 영역의 연계도
+    <span class="sum-sub">구성 요소 13종 — 레이어 · 설치 기기 · 역할 · 활용 영역</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="tw" style="margin-top:14px">
+    <table><thead><tr><th class="nw">구성 요소</th><th class="nw">레이어</th><th class="nw">설치 기기</th><th>핵심 역할</th><th>연계 활용 영역</th></tr></thead><tbody>
+    <tr><td class="nw"><strong>Orca / Antigravity</strong></td><td class="nw"><span class="badge bg-b plain">프리덤</span></td><td class="nw"><strong>전 기기</strong></td><td>구독 기반 대화형·IDE 작업 환경</td><td>원고 검토, 문헌 통독, 코드 작업</td></tr>
+    <tr><td class="nw"><strong>Claude 구독</strong></td><td class="nw"><span class="badge bg-b plain">프리덤</span></td><td class="nw">전 기기</td><td>장문 맥락 파악, 논리 추론, 학술 문체</td><td>논문 심층 검토, Desk-Reject 방어 교정</td></tr>
+    <tr><td class="nw"><strong>Gemini 구독</strong></td><td class="nw"><span class="badge bg-b plain">프리덤</span></td><td class="nw">전 기기</td><td>대용량 컨텍스트 고속 처리, 사실 기반 QA</td><td>대규모 문헌 파싱, 위키 번역 초안</td></tr>
+    <tr><td class="nw"><strong>kordoc MCP</strong></td><td class="nw"><span class="badge bg-c plain">공통</span></td><td class="nw"><strong>전 기기</strong></td><td>HWPX/PDF 서식 무손실 편집·도장·마스킹</td><td>공문서, 행정 서류, 기준 개정안</td></tr>
+    <tr><td class="nw"><strong>korean-law MCP</strong></td><td class="nw"><span class="badge bg-c plain">공통</span></td><td class="nw"><strong>전 기기</strong></td><td>법령·조례·행정규칙·판례 조회</td><td>설계기준 인용 조항 정합성 검증</td></tr>
+    <tr><td class="nw"><strong>korean-stats MCP</strong></td><td class="nw"><span class="badge bg-c plain">공통</span></td><td class="nw"><strong>전 기기</strong></td><td>KOSIS 통계 실시간 조회·시계열 분석</td><td>논문 서론 근거 수치, 정책 보고서</td></tr>
+    <tr><td class="nw"><strong>SaaS 연동</strong><br><span style="font-size:11.5px;color:var(--muted)">Drive·NotebookLM·Notion·Gmail/Calendar</span></td><td class="nw"><span class="badge bg-c plain">공통</span></td><td class="nw"><strong>전 기기</strong></td><td>클라우드 자료·문헌·일정 접근</td><td>문헌 질의, 자료 백업·공유, 일정 관리</td></tr>
+    <tr><td class="nw"><strong>Orca 모바일 앱</strong></td><td class="nw"><span class="badge bg-b plain">프리덤</span></td><td class="nw">스마트폰</td><td><strong>연구실 본체의 Orca 세션에 접속</strong></td><td>본체에서 하던 작업을 밖에서 그대로 이어가기</td></tr>
+    <tr><td class="nw"><strong>Hermes Agent</strong></td><td class="nw"><span class="badge bg-a plain">에르메스</span></td><td class="nw"><strong>맥</strong></td><td>파일시스템 직접 제어, 명령 실행, 자동화</td><td>회의 기록 저장, 서식 반영, 자산 축적</td></tr>
+    <tr><td class="nw"><strong>Telegram / Slack</strong></td><td class="nw"><span class="badge bg-a plain">에르메스</span></td><td class="nw">스마트폰</td><td><strong>위임형 원격 창구</strong></td><td>영수증·음성·링크 던지면 알아서 처리</td></tr>
+    <tr><td class="nw"><strong>Timely / OpenRouter</strong></td><td class="nw"><span class="badge bg-a plain">에르메스</span></td><td class="nw">맥</td><td>크레딧 상황에 따른 모델 전환</td><td>일상 질의, 고속 처리, 실시간 탐색</td></tr>
+    <tr><td class="nw"><strong>📚 연구 보조시스템 위키</strong></td><td class="nw"><span class="badge bg-a plain">에르메스</span></td><td class="nw">맥</td><td>문헌 지식 축적 및 상호 링크망</td><td>선행연구 정리, 지식 자산화</td></tr>
+    <tr><td class="nw"><strong>🧭 ECC Atlas</strong></td><td class="nw"><span class="badge bg-a plain">에르메스</span></td><td class="nw">맥</td><td>ECC·자기치유 분야 지식 지도</td><td>연구 흐름 파악, 제안서 배경 작성</td></tr>
+    </tbody></table></div>
+  </div>
+</details>
+
+</div>
+</section>
+
+<!-- ============================ 구축 가이드 ============================ -->
+<section class="section" id="build" data-sec="구축 가이드">
+<div class="wrap">
+
+<div class="sec-head">
+  <div class="sec-kicker">03 · 시스템 구축 가이드</div>
+  <h2>구축 가이드</h2>
+  <p class="lede">두 트랙으로 나뉩니다. <strong>반드시 프리덤 트랙 → 에르메스 트랙 순서로</strong> 진행하십시오.
+    B가 모든 기기의 기반이고, A는 맥에만 한 겹 더 올리는 작업입니다.
+    또한 B를 먼저 마치면 <strong>거기서 만들어진 Claude에게 물어보며 A를 진행</strong>할 수 있습니다.</p>
+</div>
+
+<h3 class="blk" id="b-principle">시작 전 원칙</h3>
+<div class="callout cl-warn">
+  <span class="cl-t">이 가이드는 “명령어 복사용 매뉴얼”이 아닙니다</span>
+  <p>설치 명령어와 설정 파일 형식은 <strong>버전이 오르면 몇 달 만에 바뀝니다.</strong>
+    여기에 명령어를 하나하나 박아두면 반년 뒤에는 오히려 틀린 안내가 되어 더 헤매게 됩니다.
+    게다가 컴퓨터마다 상태가 달라서, 같은 명령어라도 어떤 컴퓨터에서는 되고 어떤 컴퓨터에서는 안 됩니다.</p>
+  <p style="margin:0"><strong>그래서 이 가이드는 “무엇을, 왜, 어떤 순서로” 하는지만 알려줍니다.
+    구체적인 명령어와 설정 내용은 그때그때 AI에게 물어보면서 진행하십시오.</strong></p>
+</div>
+
+<h4 class="blk">구축을 도와줄 AI는 어디서 구하나?</h4>
+<div class="tw">
+<table class="compact">
+<thead><tr><th class="nw">시점</th><th>물어볼 곳</th></tr></thead>
+<tbody>
+<tr><td class="nw"><strong>프리덤 트랙 진행 중</strong><br><span style="font-size:11.5px;color:var(--muted)">아직 아무것도 없음</span></td>
+  <td>웹 브라우저 챗봇 — Claude(claude.ai) 권장, ChatGPT, Gemini</td></tr>
+<tr><td class="nw"><strong>에르메스 트랙 진행 중</strong></td>
+  <td><strong>프리덤 트랙에서 만든 Orca/Antigravity의 Claude</strong> ← 훨씬 정확합니다</td></tr>
+<tr><td class="nw"><strong>구축 완료 후</strong></td>
+  <td>완성된 Hermes 비서에게 직접 지시</td></tr>
+</tbody></table>
+</div>
+
+<h4 class="blk">AI에게 잘 물어보는 4가지 요소</h4>
+<p>막연히 “설치 방법 알려줘”라고 하면 일반론만 돌아옵니다. <strong>아래 4가지를 항상 함께 적어주십시오.</strong></p>
+<div class="grid g4">
+  <div class="card"><span class="badge bg-c plain">①</span><h4 style="margin-top:8px">내 컴퓨터 환경</h4>
+    <p style="margin:0;font-size:13.4px">“맥북 M3, macOS 최신 버전이야” / “윈도우 11 노트북이야”</p></div>
+  <div class="card"><span class="badge bg-c plain">②</span><h4 style="margin-top:8px">내 수준</h4>
+    <p style="margin:0;font-size:13.4px">“터미널을 거의 안 써본 초보자야”</p></div>
+  <div class="card"><span class="badge bg-c plain">③</span><h4 style="margin-top:8px">하려는 일</h4>
+    <p style="margin:0;font-size:13.4px">“Hermes Agent를 설치하려고 해”</p></div>
+  <div class="card"><span class="badge bg-c plain">④</span><h4 style="margin-top:8px">원하는 답변 형식</h4>
+    <p style="margin:0;font-size:13.4px">“명령어를 한 줄씩, 각 줄이 무슨 뜻인지 설명과 함께 알려줘”</p></div>
+</div>
+
+<h4 class="blk">막혔을 때 — 에러 메시지 통째로 붙여넣기</h4>
+<p>설치 중 빨간 글씨가 나오면 당황하지 말고 <strong>그 화면 전체를 복사해서 AI에게 그대로 붙여넣으십시오.</strong>
+  요약하지 마십시오. 에러 메시지에 원인이 그대로 적혀 있고, AI는 그것을 읽고 해결책을 냅니다.</p>
+<div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>에러 해결 요청<span class="sp"></span><button class="copy">복사</button></div>
+<pre>아래는 [무엇을] 하다가 나온 에러야. 원인이 뭔지 설명하고, 해결 명령어를 순서대로 알려줘.
+나는 터미널 초보자니까 각 명령어가 무슨 일을 하는지도 같이 알려줘.
+
+[에러 메시지 전체 붙여넣기]</pre></div>
+
+<h3 class="blk" id="b-where">무엇을 어느 기기에 설치하는가</h3>
+<div class="tw">
+<table>
+<thead><tr><th class="nw">기기</th><th>프리덤 트랙</th><th>에르메스 트랙</th></tr></thead>
+<tbody>
+<tr><td class="nw"><strong>🖥️ 맥</strong></td>
+  <td>✅ Orca/Antigravity + 구독 + MCP 3종 + SaaS</td>
+  <td>✅ <strong>Hermes + 텔레그램/슬랙 + 연구 위키·ECC Atlas</strong></td></tr>
+<tr><td class="nw"><strong>🖥️ 연구실 본체</strong></td>
+  <td>✅ Orca/Antigravity + 구독 + MCP 3종 + SaaS</td>
+  <td>❌ <strong>설치하지 않음</strong></td></tr>
+<tr><td class="nw"><strong>💻 노트북</strong></td>
+  <td>✅ Orca/Antigravity + 구독 + MCP 3종 + SaaS</td>
+  <td>❌ <strong>설치하지 않음</strong></td></tr>
+<tr><td class="nw"><strong>📱 스마트폰</strong></td>
+  <td>✅ Orca 모바일 앱 (→ 본체 연결)</td>
+  <td>✅ 텔레그램 · 슬랙 (→ 맥 Hermes 연결)</td></tr>
+</tbody></table>
+</div>
+<div class="callout cl-warn">
+  <span class="cl-t">⚠ 왜 본체·노트북에는 Hermes를 깔지 않는가</span>
+  <p>Hermes Agent는 <strong>파일을 스스로 만들고 고치고 지울 수 있는 자율 에이전트</strong>입니다.
+    그래서 <strong>자율 실행 권한은 맥 한 대에만 두고, 본체와 노트북은 사람이 확인하며 작업하는 안전지대로 남겨둡니다.</strong></p>
+  <p style="margin:0">이것은 기능의 한계가 아니라 <strong>의도된 안전장치</strong>입니다.
+    <strong>MCP 3종과 SaaS 연동이 전 기기에 구성되므로 실무 능력에는 차이가 없습니다.</strong>
+    본체·노트북에서도 HWPX 편집·법령 조회·통계 조회가 모두 됩니다.</p>
+</div>
+
+<div class="track-pick">
+  <a class="track tb" href="#b-trackb"><span class="badge bg-b">프리덤 트랙 · 먼저</span>
+    <div class="tt">프리덤 — 공통 기반</div>
+    <div class="td">Orca/Antigravity + 구독 로그인 + MCP 3종 + Orca 모바일 + SaaS 연동</div>
+    <div class="tm">맥 · 연구실 본체 · 노트북 (전부) · 난이도 ⭐ 쉬움 · STEP 1~5</div></a>
+  <a class="track ta" href="#b-tracka"><span class="badge bg-a">에르메스 트랙 · 다음</span>
+    <div class="tt">에르메스 — 비서 레이어</div>
+    <div class="td">Hermes Agent + 모델 API + 텔레그램/슬랙 + 백업·연구자산</div>
+    <div class="tm">맥에만 · 난이도 ⭐⭐⭐ 보통 · STEP 1~7</div></a>
+</div>
+
+<!-- ---------------- 프리덤 트랙 ---------------- -->
+<h3 class="blk" id="b-trackb">프리덤 트랙 — 공통 기반 (전 기기) <span class="badge bg-b">맥 · 본체 · 노트북</span></h3>
+<p><strong>모든 기기에서 똑같이 쓸 수 있는 AI 작업 환경</strong>입니다. 구축이 끝나면 어느 컴퓨터 앞에 앉든 동일한 능력을 갖게 됩니다.</p>
+<div class="callout cl-b">
+  <span class="cl-t">왜 이걸 먼저 하나</span>
+  <p><strong>1. 가장 쉽습니다.</strong> 터미널도, 설정 파일도, API 키도 필요 없습니다. 앱 설치 + 로그인이 전부입니다.</p>
+  <p><strong>2. 여기서 만든 Claude에게 물어보며 에르메스 트랙을 진행할 수 있습니다.</strong> 도우미를 먼저 확보하는 순서입니다.</p>
+  <p style="margin:0"><strong>3. 이것만으로도 실무의 대부분이 됩니다.</strong>
+    MCP 3종과 SaaS 연동이 들어가므로 HWPX 편집·법령 조회·통계 조회·문헌 질의가 전부 가능합니다.</p>
+</div>
+
+<details class="acc b-acc" open>
+  <summary><span class="num">1</span><span class="sum-t">Orca / Antigravity 설치 및 구독 로그인
+    <span class="sum-sub">Claude·Gemini 구독을 추가 과금 없이 정액으로 쓰는 작업 환경 만들기</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <h4 class="blk" style="margin-top:14px">1-1. 무엇을 설치하나</h4>
+    <div class="tw"><table class="compact"><thead><tr><th class="nw">앱</th><th class="nw">성격</th><th>어울리는 작업</th></tr></thead><tbody>
+      <tr><td class="nw"><strong>Orca</strong></td><td class="nw">대화형 작업 환경 · <strong>모바일 앱 제공</strong></td><td>대화로 길게 주고받는 작업, 원고 다듬기</td></tr>
+      <tr><td class="nw"><strong>Antigravity</strong></td><td class="nw">에이전트형 IDE</td><td>코드·스크립트가 얽힌 작업</td></tr>
+    </tbody></table></div>
+    <p style="font-size:14.2px;color:var(--text2)">둘 다 설치해두고 작업 성격에 따라 골라 쓰는 것을 권장합니다.</p>
+
+    <h4 class="blk">1-2. ⚠ 반드시 알아야 할 것 — 구독 로그인 vs API 키</h4>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>여기가 이 시스템 전체의 비용을 좌우하는 지점입니다.</strong></p>
+    <div class="tw"><table class="compact"><thead><tr><th>인증 방식</th><th class="nw">비용</th><th class="nw">어디서 쓰나</th></tr></thead><tbody>
+      <tr><td><strong>구독 계정 로그인</strong> ← 이 트랙에서 하는 것</td><td class="nw"><span class="badge bg-c">정액</span></td><td class="nw">Orca / Antigravity</td></tr>
+      <tr><td>API 키 등록</td><td class="nw"><span class="badge bg-w">쓴 만큼 과금</span></td><td class="nw">Hermes (에르메스 트랙)</td></tr>
+    </tbody></table></div>
+    <div class="callout cl-tip">같은 Claude인데 인증 방식만 다르면 비용이 완전히 달라집니다.
+      그래서 <strong>Claude·Gemini를 길게 쓸 작업은 반드시 이 환경에서</strong> 하십시오. 맥에서도 마찬가지입니다.</div>
+
+    <h4 class="blk">1-3. 설치 흐름</h4>
+    <div class="od">
+      <div class="od-row"><span class="od-n">1</span><div class="od-b">기기에 <b>Orca</b> 또는 <b>Antigravity</b> 설치</div></div>
+      <div class="od-row"><span class="od-n">2</span><div class="od-b">앱 실행 → <b>Claude 구독 계정 / Google(Gemini) 구독 계정으로 로그인 인증</b></div></div>
+      <div class="od-row"><span class="od-n">3</span><div class="od-b">작업할 폴더를 열어두면 준비 완료</div></div>
+      <div class="od-row"><span class="od-n">4</span><div class="od-b"><b>맥·본체·노트북 3대 모두에 동일하게 반복</b></div></div>
+    </div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>내 컴퓨터([macOS / 윈도우 11])에 [Orca / Antigravity]를 설치하고
+내 [Claude / Gemini] 구독 계정으로 로그인해서 쓰려고 해. 나는 초보자야.
+
+1) 설치 방법
+2) 구독 계정으로 로그인 인증하는 절차
+3) 구독 로그인으로 쓸 때 추가 API 요금이 발생하지 않는 게 맞는지 확인
+4) 작업 폴더를 여는 방법
+
+각 단계를 초보자 눈높이로 알려줘.</pre></div>
+    <div class="done"><span class="dk">✅ 완료 판정</span><div>앱 안에서 대화가 되고, 계정 설정 화면에
+      <strong>구독 플랜으로 인증됨</strong>이 표시되면 성공입니다.
+      <strong>API 사용량 요금이 올라가지 않는지도 한 번 확인</strong>해 두십시오.</div></div>
+  </div>
+</details>
+
+<details class="acc b-acc">
+  <summary><span class="num">2</span><span class="sum-t">MCP 3종 연동 (전 기기)
+    <span class="sum-sub">한글 공문서(HWPX) · 국가 법령 · 국가 통계 — 이 시스템의 가장 큰 차별점</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <h4 class="blk" style="margin-top:14px">2-1. 무엇을 붙이나</h4>
+    <div class="tw"><table class="compact"><thead><tr><th class="nw">MCP 서버</th><th>하는 일</th><th class="nw">도구 수</th></tr></thead><tbody>
+      <tr><td class="nw"><code>kordoc</code></td><td>한글(HWPX)·PDF 서식 유지 편집, 도장 배치, 개인정보 마스킹</td><td class="nw">15</td></tr>
+      <tr><td class="nw"><code>korean-law</code></td><td>법령·조례·행정규칙·판례 조회</td><td class="nw">10</td></tr>
+      <tr><td class="nw"><code>korean-stats</code></td><td>KOSIS 국가통계 실시간 조회·시계열 분석</td><td class="nw">18</td></tr>
+      <tr><td class="nw"></td><td><strong>합계</strong></td><td class="nw"><strong>43</strong></td></tr>
+    </tbody></table></div>
+    <div class="callout cl-tip">이 3종은 <strong>Claude와의 궁합이 특히 좋습니다.</strong>
+      그래서 Claude 구독 기반인 이 환경에 붙여두면 제 성능이 나옵니다.
+      <strong>맥·본체·노트북 3대 모두에 설치</strong>하여, 어느 컴퓨터 앞에 앉아도 같은 도구를 쓸 수 있게 합니다.</div>
+
+    <h4 class="blk">2-2. 사전 준비 — KOSIS 인증키</h4>
+    <p style="font-size:14.2px;color:var(--text2)"><code>korean-stats</code>만 별도의 무료 인증키가 필요합니다.
+      국가통계포털 Open API 페이지(<a href="https://kosis.kr/openapi/" target="_blank" rel="noopener">kosis.kr/openapi</a>)에서
+      발급받으십시오. <strong>무료이고 신청 즉시 발급됩니다.</strong>
+      발급받은 키 하나를 <strong>3대 기기에 동일하게</strong> 넣으면 됩니다.</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>[Orca / Antigravity]에 MCP 서버 3개를 연결하려고 해. 나는 초보자야.
+연결할 것: kordoc(한글문서), korean-law(법령), korean-stats(국가통계)
+
+알려줄 것:
+1) 이 앱에서 MCP 서버를 등록하는 방법과 설정 파일 위치
+2) 위 3개를 각각 등록하는 실제 설정 예시
+3) korean-stats에 KOSIS 인증키를 넣는 위치
+4) 등록 후 도구가 제대로 인식됐는지 확인하는 방법
+
+설정 화면을 여는 방법부터 초보자 눈높이로 알려줘.</pre></div>
+
+    <h4 class="blk">2-3. 🔐 보안 — 기기 3대 모두에 적용됩니다</h4>
+    <p style="font-size:14.2px;color:var(--text2)">KOSIS 인증키가 <strong>3대 기기에 각각 저장</strong>되므로,
+      <strong>세 곳 모두에서</strong> 아래를 지켜야 합니다.</p>
+    <ol><li>키가 담긴 설정 파일은 <strong>본인만 읽도록 권한을 제한</strong></li>
+      <li><strong>그 폴더를 클라우드 백업 대상에 넣지 않기</strong></li>
+      <li>어떤 문서·메신저·질문창에도 <strong>실제 키 값을 붙여넣지 않기</strong></li></ol>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>MCP 설정 파일에 API 인증키가 들어있어. 나만 읽을 수 있게 파일 권한을 제한하는 방법을 알려주고,
+이 파일이 실수로 클라우드 백업이나 깃(Git)에 올라가지 않게 막는 방법도 알려줘.
+([macOS / 윈도우] 기준)</pre></div>
+    <div class="done"><span class="dk">✅ 완료 판정</span><div>앱에서
+      <strong>“지금 연결된 MCP 도구 목록을 보여줘”</strong>라고 물었을 때 총 <strong>43개</strong> 도구가 나오면 성공입니다.
+      <strong>3대 기기에서 각각 확인</strong>하십시오.</div></div>
+  </div>
+</details>
+
+<details class="acc b-acc">
+  <summary><span class="num">3</span><span class="sum-t">Orca 모바일 앱 연결
+    <span class="sum-sub">밖에서도 스마트폰으로 연구실 본체의 Orca 세션에 붙어 작업 이어가기</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <h4 class="blk" style="margin-top:14px">3-1. 이 경로의 성격</h4>
+    <div class="tw"><table class="compact"><thead><tr><th class="nw">경로</th><th class="nw">연결 대상</th><th>성격</th></tr></thead><tbody>
+      <tr><td class="nw"><strong>Orca 모바일 앱</strong> ← 이 단계</td><td class="nw"><strong>본체의 Orca</strong></td><td><strong>원격 조작</strong> — 본체 세션에 붙어 대화를 이어감</td></tr>
+      <tr><td class="nw">텔레그램·슬랙 (에르메스 트랙)</td><td class="nw">맥의 Hermes</td><td>위임 — 던져놓으면 알아서 처리</td></tr>
+      <tr><td class="nw">Chrome Remote Desktop</td><td class="nw">맥·본체 화면</td><td>화면 통째로 제어</td></tr>
+    </tbody></table></div>
+
+    <h4 class="blk">3-2. 연결 흐름</h4>
+    <div class="od">
+      <div class="od-row"><span class="od-n">1</span><div class="od-b">연구실 본체에 Orca가 설치되어 있고 실행 중인 상태를 확인</div></div>
+      <div class="od-row"><span class="od-n">2</span><div class="od-b">스마트폰에 <b>Orca 모바일 앱</b> 설치</div></div>
+      <div class="od-row"><span class="od-n">3</span><div class="od-b">같은 계정으로 로그인 → <b>본체의 Orca 세션에 연결</b></div></div>
+      <div class="od-row"><span class="od-n">4</span><div class="od-b">밖에서 접속하려면 본체가 켜져 있어야 하므로 <b>본체 전원·절전 설정을 확인</b></div></div>
+    </div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>Orca 모바일 앱을 설치해서 연구실 본체에 설치된 Orca에 원격으로 연결하려고 해. 나는 초보자야.
+
+1) 모바일 앱 설치 및 본체와 연결하는 방법
+2) 밖에서 접속하려면 본체를 어떤 상태로 두어야 하는지 (절전 모드 설정 등)
+3) 연결이 안 될 때 확인할 것들
+4) 보안상 주의할 점</pre></div>
+    <div class="callout cl-warn"><strong>본체 절전 설정을 꼭 확인하십시오.</strong>
+      본체가 잠자기로 들어가면 밖에서 접속이 되지 않습니다.</div>
+    <div class="done"><span class="dk">✅ 완료 판정</span><div>연구실 밖(또는 휴대폰 데이터 연결)에서
+      Orca 모바일로 접속해 대화가 되면 성공입니다.</div></div>
+  </div>
+</details>
+
+<details class="acc b-acc">
+  <summary><span class="num">4</span><span class="sum-t">SaaS 연동 (전 기기)
+    <span class="sum-sub">Google Drive · NotebookLM · Notion · Gmail/Calendar를 3대에 동일하게</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <h4 class="blk" style="margin-top:14px">4-1. 무엇을 붙이나</h4>
+    <div class="tw"><table class="compact"><thead><tr><th class="nw">서비스</th><th>하는 일</th><th class="nw">우선순위</th></tr></thead><tbody>
+      <tr><td class="nw"><strong>Google Drive</strong></td><td>연구 자료 백업 및 <strong>기기 간 파일 공유 통로</strong></td><td class="nw"><span class="badge bg-c">가장 먼저</span></td></tr>
+      <tr><td class="nw"><strong>NotebookLM</strong></td><td>대규모 문헌 기반 질의응답, 오디오 오버뷰</td><td class="nw">높음</td></tr>
+      <tr><td class="nw"><strong>Notion</strong></td><td><code>Notion_연구논문관리</code> 대시보드 연계</td><td class="nw">보통</td></tr>
+      <tr><td class="nw"><strong>Gmail / Calendar</strong></td><td>학술 일정·세미나·연락망 관리</td><td class="nw">보통</td></tr>
+    </tbody></table></div>
+    <div class="callout cl-tip"><strong>Google Drive를 가장 먼저 붙이십시오.</strong>
+      연구 위키와 ECC Atlas는 맥에만 있으므로, <strong>본체·노트북에서 작업할 파일을 주고받는 통로가 드라이브</strong>입니다.
+      이게 없으면 기기를 옮길 때마다 막힙니다.</div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>내 컴퓨터([macOS / 윈도우 11])의 [Orca / Antigravity]에서 구글 서비스와 NotebookLM, Notion을 쓰려고 해.
+나는 초보자야.
+
+붙이고 싶은 것:
+1) Google Drive — 연구 자료를 기기 간에 주고받는 통로로 쓸 거야
+2) NotebookLM — notebooklm-mcp-cli 도구로 노트북에 질문하고 싶어
+3) Notion — 연구논문관리 데이터베이스와 연결
+4) Gmail / Google Calendar — 일정 확인
+
+알려줄 것:
+- 각각을 연결하는 방법과 순서 (구글 계정 인증이 필요하면 그 절차도)
+- 연결이 잘 됐는지 확인하는 방법
+- 여러 대에 같은 설정을 반복할 때 주의할 점
+
+Google Drive부터 먼저 알려주고, 나머지는 그다음에 하나씩 알려줘.</pre></div>
+
+    <h4 class="blk">4-2. ⚠ 3대에 반복할 때 주의할 점</h4>
+    <ul>
+      <li><strong>인증 토큰은 기기마다 따로 발급됩니다.</strong> 한 대에서 로그인했다고 나머지가 되지 않습니다. 3대 각각에서 인증하십시오.</li>
+      <li><strong>인증 토큰도 비밀정보입니다.</strong> STEP 2의 보안 원칙(파일 권한 제한·백업 제외)을 토큰 파일에도 그대로 적용하십시오.</li>
+      <li><strong>드라이브 동기화 폴더를 3대가 서로 다르게 잡으면 헷갈립니다.</strong> 폴더 이름과 위치를 통일해 두십시오.</li>
+    </ul>
+    <div class="done"><span class="dk">✅ 완료 판정</span><div>3대 각각에서
+      <strong>“내 구글 드라이브에서 [파일명] 찾아줘”</strong>,
+      <strong>“NotebookLM의 [노트북명]에서 [주제] 찾아줘”</strong>가 동작하면 성공입니다.</div></div>
+  </div>
+</details>
+
+<div class="callout cl-b">
+  <span class="cl-t">STEP 5 — 점검</span>
+  프리덤 트랙의 점검 체크리스트는 아래 <a href="#b-check">점검 체크리스트</a>에 있습니다.
+  여기까지 완료하셨다면 <strong>어느 컴퓨터 앞에 앉아도 동일한 AI 작업 환경</strong>을 갖추신 것입니다.
+  이제 맥에 <strong>“위임형 비서”</strong> 한 겹을 더 올릴 차례입니다.
+</div>
+
+<!-- ---------------- 에르메스 트랙 ---------------- -->
+<h3 class="blk" id="b-tracka">에르메스 트랙 — 비서 레이어 <span class="badge bg-a">맥에만</span></h3>
+<p><strong>맥에 “위임형 비서”를 한 겹 올립니다.</strong>
+  프리덤 트랙에서 만든 작업 환경이 <em>내가 직접 앉아서 쓰는 작업대</em>라면,
+  여기서 만드는 것은 <strong>던져놓으면 알아서 처리하고 보고하는 비서</strong>입니다.</p>
+<div class="callout cl-a">
+  <span class="cl-t">선행 조건 · 물어볼 AI</span>
+  <p><strong>프리덤 트랙을 먼저 완료하십시오.</strong></p>
+  <p style="margin:0">이 트랙을 진행할 때는 <strong>프리덤 트랙에서 만든 Orca/Antigravity의 Claude</strong>에게 물어보십시오.
+    웹 챗봇보다 훨씬 정확합니다 — 실제 파일과 설정을 직접 볼 수 있기 때문입니다.</p>
+</div>
+
+<details class="acc a-acc">
+  <summary><span class="num">1</span><span class="sum-t">맥 기초 환경 준비
+    <span class="sum-sub">패키지 관리자(Homebrew) · 파이썬 — 터미널은 맥에 이미 있음</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <p style="margin-top:14px;font-size:14.2px;color:var(--text2)"><strong>목표:</strong>
+      Hermes가 올라갈 바닥을 까는 단계입니다. 세 가지가 필요합니다 — <strong>패키지 관리자, 파이썬, 터미널.</strong></p>
+    <ul>
+      <li><strong>패키지 관리자:</strong> 프로그램을 명령어로 설치·삭제해주는 “앱스토어” 역할</li>
+      <li><strong>파이썬(Python):</strong> Hermes Agent가 파이썬으로 만들어졌으므로 필수</li>
+      <li><strong>터미널:</strong> 명령어를 입력하는 검은 창</li>
+    </ul>
+
+    <h4 class="blk">🍎 macOS <span class="badge bg-c plain">실제 운용 환경</span></h4>
+    <p style="font-size:14.2px;color:var(--text2)">macOS에는 <strong>터미널(Terminal.app)이 이미 들어 있으므로</strong>
+      따로 설치할 것이 없습니다. <strong>패키지 관리자(Homebrew)와 파이썬만</strong> 설치하면 됩니다.</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요 (macOS)<span class="sp"></span><button class="copy">복사</button></div>
+<pre>나는 맥북(Apple Silicon)을 쓰는 터미널 초보자야. AI 에이전트를 설치하려고 기초 환경을 준비하려고 해.
+1) Homebrew 설치 방법
+2) Homebrew로 python, node, git 설치하는 방법
+위 순서대로, 명령어를 한 줄씩 알려주고 각 명령어가 무슨 일을 하는지도 설명해줘.
+터미널은 맥에 기본으로 있는 것(Terminal.app)을 그대로 쓸 거야.
+설치가 잘 됐는지 확인하는 방법(버전 확인 명령어)도 마지막에 알려줘.</pre></div>
+    <div class="callout cl-warn"><span class="cl-t">⚠ 맥에서 자주 걸리는 문제</span>
+      Homebrew로 파이썬을 설치해도 터미널이 그 파이썬을 못 찾는 경우가 있습니다(“command not found”).
+      이때는 <strong>PATH 설정</strong>이 필요하니, 에러를 그대로 AI에게 붙여넣고 “PATH 설정을 해달라”고 하십시오.</div>
+
+    <h4 class="blk">🪟 Windows <span class="badge bg-w plain">참고 — 권장하지 않음</span></h4>
+    <div class="callout cl-note">
+      <strong>본 인프라는 에르메스를 맥에 두는 것을 전제로 합니다.</strong>
+      Claude·Codex에 최적화된 도구들이 macOS에서 가장 안정적으로 동작하고, 연구 자산도 맥에 모여 있기 때문입니다.
+      <strong>윈도우 기기는 프리덤 트랙으로 쓰시는 편이 좋습니다.</strong>
+    </div>
+    <p style="font-size:14.2px;color:var(--text2)">그래도 윈도우에 구축해야 한다면, 이 계열 도구가 대부분 리눅스/맥 기준으로
+      만들어져 있으므로 <strong>WSL2(윈도우 안에서 리눅스를 돌리는 기능)</strong>를 켜고 그 안에서 작업하십시오.</p>
+    <ul>
+      <li><strong>터미널:</strong> Windows Terminal (기본 제공)</li>
+      <li><strong>권장 방식:</strong> WSL2 설치 → 그 안의 Ubuntu에서 macOS와 거의 동일하게 진행</li>
+      <li><strong>패키지 관리자:</strong> WSL 안에서는 <code>apt</code>, 윈도우 자체는 <code>winget</code> 또는 Scoop</li>
+    </ul>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요 (Windows)<span class="sp"></span><button class="copy">복사</button></div>
+<pre>나는 윈도우 11 노트북을 쓰는 초보자야. 파이썬 기반 AI 에이전트를 설치하려고 해.
+1) WSL2와 Ubuntu를 설치하는 방법을 단계별로 알려줘 (관리자 권한이 필요하면 그것도 알려줘)
+2) 설치한 Ubuntu 안에서 python, node, git을 설치하는 방법
+3) Windows Terminal에서 Ubuntu 창을 여는 방법
+각 단계가 무슨 의미인지 초보자 눈높이로 설명하고, 재부팅이 필요한 시점도 알려줘.</pre></div>
+    <div class="done"><span class="dk">✅ 완료 판정</span><div>터미널에서
+      <code>python3 --version</code>, <code>node --version</code>, <code>git --version</code>
+      세 개가 모두 버전 숫자를 출력하면 성공입니다.</div></div>
+  </div>
+</details>
+
+<details class="acc a-acc">
+  <summary><span class="num">2</span><span class="sum-t">Hermes Agent 설치
+    <span class="sum-sub">“가상환경이 뭔가요? 맥 OS도 가상환경으로 설치하나요?” 답변 포함</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="callout cl-tip" style="margin-top:14px">
+      <span class="cl-t">💬 먼저 — “가상환경”이 뭔가요? macOS도 가상환경으로 설치하나요?</span>
+      <p><strong>아닙니다. 흔한 오해인데, 가상환경은 운영체제(맥 OS)를 가상으로 설치하는 것이 아닙니다.</strong></p>
+      <p>가상환경(venv)은 <strong>파이썬 부품(라이브러리)을 담아두는 별도의 보관함</strong>입니다.
+        맥 OS 자체는 아무 영향도 받지 않습니다.</p>
+      <p>왜 굳이 보관함을 따로 만드느냐 하면 —</p>
+      <p>· 맥 OS는 <strong>자기 내부 기능을 돌리는 데에도 파이썬을 씁니다.</strong> 여기에 이것저것 설치하다가
+        부품 버전이 꼬이면 <strong>운영체제 도구가 망가질 수 있습니다.</strong>
+        (최신 macOS는 아예 시스템 파이썬에 설치하는 것을 막아둡니다)</p>
+      <p style="margin:0">· 나중에 뭔가 잘못돼도 <strong>그 보관함 폴더만 지우고 다시 만들면</strong> 깨끗하게 복구됩니다.</p>
+    </div>
+    <div class="tw"><table class="compact"><thead><tr><th class="nw"></th><th>macOS</th><th>Windows</th></tr></thead><tbody>
+      <tr><td class="nw"><strong>가상환경 필요한가?</strong></td><td><strong>필수</strong> (OS가 파이썬을 쓰기 때문)</td><td><strong>권장</strong> (OS는 무관하나 정리 목적)</td></tr>
+      <tr><td class="nw"><strong>무엇이 격리되는가?</strong></td><td>파이썬 라이브러리만 (OS는 무관)</td><td>파이썬 라이브러리만</td></tr>
+      <tr><td class="nw"><strong>활성화 방식</strong></td><td><code>source</code> 명령 사용</td><td>WSL은 macOS와 동일 / 윈도우 네이티브는 다름</td></tr>
+    </tbody></table></div>
+    <div class="callout cl-note"><strong>요약:</strong> “맥 OS를 가상환경에 설치”하는 게 아니라,
+      <strong>“파이썬 부품만 따로 보관”</strong>하는 것입니다.</div>
+
+    <h4 class="blk">2-1. 설치 흐름</h4>
+    <div class="od">
+      <div class="od-row"><span class="od-n">1</span><div class="od-b">Hermes Agent 소스코드를 GitHub에서 내려받기</div></div>
+      <div class="od-row"><span class="od-n">2</span><div class="od-b">파이썬 가상환경 만들고 활성화하기</div></div>
+      <div class="od-row"><span class="od-n">3</span><div class="od-b">필요한 부품(의존성) 설치하기</div></div>
+      <div class="od-row"><span class="od-n">4</span><div class="od-b"><code>hermes</code> 명령이 실행되는지 확인하기</div></div>
+    </div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>맥북에서 Nous Research의 Hermes Agent를 설치하려고 해. 나는 초보자야.
+1) 공식 GitHub 저장소 주소를 먼저 확인해서 알려줘 (최신 기준으로)
+2) 홈 디렉토리 아래에 소스를 내려받는 명령어
+3) 파이썬 가상환경(venv)을 만들고 활성화하는 명령어
+4) 의존성을 설치하는 명령어
+5) 설치가 끝난 뒤 hermes 명령이 잘 실행되는지 확인하는 방법
+각 명령어가 무슨 뜻인지 한 줄씩 설명해주고, 터미널을 껐다 켰을 때 가상환경을 다시 활성화하는 방법도 알려줘.</pre></div>
+
+    <h4 class="blk">2-2. Hermes는 세 창구에서 모두 운영합니다</h4>
+    <div class="tw"><table class="compact"><thead><tr><th class="nw">창구</th><th>어울리는 작업</th></tr></thead><tbody>
+      <tr><td class="nw"><strong>Orca</strong></td><td>대화형으로 길게 주고받는 작업</td></tr>
+      <tr><td class="nw"><strong>Antigravity</strong></td><td>코드·스크립트가 얽힌 작업</td></tr>
+      <tr><td class="nw"><strong>터미널</strong></td><td>명령 위주의 빠른 처리, 배치 작업</td></tr>
+    </tbody></table></div>
+    <div class="callout cl-warn"><span class="cl-t">⚠ 헷갈리기 쉬운 점</span>
+      맥의 Orca에서는 <strong>① 구독 인증으로 Claude를 쓰는 것(프리덤)</strong>과
+      <strong>② Hermes를 불러 쓰는 것(에르메스)</strong>이 모두 가능합니다.
+      <strong>①은 정액, ②는 종량 과금</strong>이므로 지금 어느 쪽으로 일하고 있는지 항상 의식하십시오.</div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>맥에 Hermes Agent를 설치했어. 이걸 Orca, Antigravity, 터미널 각각에서 실행하려면
+어떻게 해야 하는지 알려줘. 가상환경을 활성화한 상태로 실행해야 한다면 그 방법도 함께 알려줘.</pre></div>
+    <div class="done"><span class="dk">✅ 완료 판정</span><div>터미널에 <code>hermes</code>를 입력했을 때 프로그램이 실행되면 성공입니다.
+      (아직 모델 연결 전이라 대화는 안 될 수 있습니다)</div></div>
+  </div>
+</details>
+
+<details class="acc a-acc">
+  <summary><span class="num">3</span><span class="sum-t">모델 연결 및 API 키 등록
+    <span class="sum-sub">Timely → OpenRouter 이중화 · 프리덤 트랙과 정반대로 종량 과금</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <h4 class="blk" style="margin-top:14px">3-1. ⚠ 구독과 API는 다릅니다</h4>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>프리덤 트랙과 정반대 상황입니다.</strong>
+      프리덤 트랙에서는 구독 로그인만으로 끝났지만, <strong>Hermes에서는 API 키가 필요하고 쓴 만큼 돈이 나갑니다.</strong></p>
+    <div class="tw"><table class="compact"><thead><tr><th class="nw">모델</th><th>Hermes에서의 인증</th><th class="nw">비용</th></tr></thead><tbody>
+      <tr><td class="nw"><strong>ChatGPT</strong></td><td>구독 계정 <strong>로그인 인증으로 사용 가능</strong></td><td class="nw"><span class="badge bg-c">구독료 내</span></td></tr>
+      <tr><td class="nw"><strong>Claude</strong></td><td>구독 인증 <strong>불가</strong> → API 키 필요</td><td class="nw"><span class="badge bg-w">종량</span></td></tr>
+      <tr><td class="nw"><strong>Gemini</strong></td><td>구독 인증 <strong>불가</strong> → API 키 필요</td><td class="nw"><span class="badge bg-w">종량</span></td></tr>
+      <tr><td class="nw"><strong>Grok</strong></td><td>구독 인증 <strong>불가</strong> → API 키 필요</td><td class="nw"><span class="badge bg-w">종량</span></td></tr>
+    </tbody></table></div>
+    <div class="callout cl-tip">그래서 <strong>Claude·Gemini를 오래 쓸 작업은 같은 맥에서라도 Orca/Antigravity(프리덤 트랙)로 여십시오.</strong>
+      같은 컴퓨터, 같은 모델인데 <strong>인증 방식만 바꾸면 정액</strong>이 됩니다.</div>
+
+    <h4 class="blk">3-2. 어떤 키를 준비하나</h4>
+    <div class="od">
+      <div class="od-row"><span class="od-n">1</span><div class="od-b"><b>전남대학교 Timely 서비스</b> — 대학 포털에서 발급받은 API 주소(Endpoint)와 키. <b>1순위 경로</b>이므로 가장 먼저 준비합니다.</div></div>
+      <div class="od-row"><span class="od-n">2</span><div class="od-b"><b>OpenRouter</b> (openrouter.ai) — 계정 생성 후 API 키 발급. <b>Timely 크레딧 소진 시 전환용</b></div></div>
+      <div class="od-row"><span class="od-n">3</span><div class="od-b">(선택) Claude, Gemini, Grok — 종량 과금을 감수하고 Hermes에서 직접 쓸 경우에만</div></div>
+    </div>
+
+    <h4 class="blk">3-3. API 키를 어디에 넣는가 — AI에게 물어보며 진행</h4>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>설정 파일의 위치와 항목 이름은 Hermes 버전에 따라 다릅니다.</strong>
+      그래서 여기에 고정된 형식을 적어두는 대신,
+      <strong>설치된 버전의 실제 문서를 AI에게 읽히고 물어보는 방식</strong>을 권장합니다.</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>맥에 Hermes Agent를 설치했는데 이제 AI 모델을 연결하려고 해. 나는 초보자야.
+
+내 상황:
+- 평소에는 전남대 Timely API를 쓰고, 크레딧이 떨어지면 OpenRouter로 바꿔 쓰고 싶어
+- API 키를 두 개 다 등록해두고 필요할 때 전환하고 싶어
+
+알려줄 것:
+1) Hermes Agent의 설정 파일이 어디에 있고 이름이 뭔지
+2) 그 파일에 API 키와 모델 이름을 어떤 형식으로 적어야 하는지 (실제 예시 포함)
+3) Timely와 OpenRouter를 전환하는 가장 간단한 방법
+4) 지금 어느 쪽을 쓰고 있는지 확인하는 방법
+5) 설정이 제대로 됐는지 확인하는 테스트 방법
+
+설정 파일을 처음 만드는 것부터 시작해서, 텍스트 편집기로 여는 방법까지 알려줘.</pre></div>
+    <div class="callout cl-note"><strong>모델 이름은 <a href="#u-route">모델 라우팅</a> 목록을 그대로 쓰십시오.</strong>
+      연결이 실패하면 OpenRouter 웹사이트나 Timely 포털의 모델 목록에서 <strong>정확한 이름을 복사</strong>해 넣으십시오.
+      오타 하나면 연결이 실패합니다.</div>
+
+    <h4 class="blk">3-4. 🔐 보안 — 이건 꼭 지키십시오</h4>
+    <p style="font-size:14.2px;color:var(--text2)">API 키가 유출되면 <strong>남이 내 돈으로 AI를 씁니다.</strong></p>
+    <ol>
+      <li>키가 담긴 설정 파일은 <strong>본인만 읽도록 권한을 제한</strong>합니다</li>
+      <li><strong>홈 폴더를 통째로 클라우드에 백업하지 마십시오</strong> — 키 파일이 그대로 올라갑니다</li>
+      <li><strong>어떤 문서·메신저·질문창에도 실제 키 값을 붙여넣지 마십시오</strong> (AI에게 물어볼 때도 키는 가리고 물어보십시오)</li>
+    </ol>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>내 Hermes 설정 파일에 API 키가 들어있어. 나만 읽을 수 있게 파일 권한을 제한하는 명령어를 알려주고,
+이 파일이 실수로 클라우드 백업이나 깃(Git)에 올라가지 않게 막는 방법도 알려줘. (맥 기준)</pre></div>
+    <div class="done"><span class="dk">✅ 완료 판정</span><div><code>hermes</code>를 실행하고 “안녕”이라고 입력했을 때 AI가 답하면 성공입니다.</div></div>
+  </div>
+</details>
+
+<details class="acc a-acc">
+  <summary><span class="num">4</span><span class="sum-t">Hermes에 MCP 3종 등록
+    <span class="sum-sub">프리덤 트랙에서 붙였던 MCP를 Hermes에도 — 별개의 프로그램이므로 따로 등록</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <h4 class="blk" style="margin-top:14px">4-1. 왜 또 하나</h4>
+    <p style="font-size:14.2px;color:var(--text2)">프리덤 트랙에서 이미 설치하셨지만,
+      <strong>Hermes는 별개의 프로그램이므로 자기 설정에 따로 등록해야 합니다.</strong>
+      같은 MCP 서버를 두 곳에서 각각 불러 쓰는 구조입니다.
+      <strong>KOSIS 인증키는 프리덤 트랙에서 발급받은 것을 그대로 재사용</strong>하시면 됩니다.</p>
+    <div class="tw"><table class="compact"><thead><tr><th class="nw"></th><th class="nw">사용 주체</th><th>등록 위치</th></tr></thead><tbody>
+      <tr><td class="nw">프리덤 트랙에서 한 것</td><td class="nw">Orca / Antigravity</td><td>그 앱의 설정</td></tr>
+      <tr><td class="nw"><strong>여기서 하는 것</strong></td><td class="nw"><strong>Hermes</strong></td><td><strong>Hermes 설정 파일</strong></td></tr>
+    </tbody></table></div>
+
+    <h4 class="blk">4-2. 등록할 것</h4>
+    <div class="tw"><table class="compact"><thead><tr><th class="nw">MCP 서버</th><th>하는 일</th><th class="nw">도구 수</th></tr></thead><tbody>
+      <tr><td class="nw"><code>kordoc</code></td><td>한글(HWPX)·PDF 서식 유지 편집, 도장 배치, 개인정보 마스킹</td><td class="nw">15</td></tr>
+      <tr><td class="nw"><code>korean-law</code></td><td>법령·조례·행정규칙·판례 조회</td><td class="nw">10</td></tr>
+      <tr><td class="nw"><code>korean-stats</code></td><td>KOSIS 국가통계 실시간 조회·시계열 분석</td><td class="nw">18</td></tr>
+    </tbody></table></div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>맥의 Hermes Agent에 MCP 서버 3개를 연결하려고 해. 나는 초보자야.
+연결할 것: kordoc(한글문서), korean-law(법령), korean-stats(국가통계)
+KOSIS 인증키는 이미 발급받아서 갖고 있어.
+
+알려줄 것:
+1) Hermes Agent에서 MCP 서버를 등록하는 설정 형식과 위치
+2) 위 3개를 각각 등록하는 실제 설정 예시
+3) korean-stats에 KOSIS 인증키를 넣는 위치
+4) 등록 후 도구가 제대로 인식됐는지 확인하는 방법</pre></div>
+    <div class="done"><span class="dk">✅ 완료 판정</span><div>Hermes에서
+      <strong>“지금 연결된 MCP 도구 목록을 보여줘”</strong>라고 물었을 때 총 <strong>43개</strong> 도구가 나오면 성공입니다.</div></div>
+  </div>
+</details>
+
+<details class="acc a-acc">
+  <summary><span class="num">5</span><span class="sum-t">텔레그램 · 슬랙 게이트웨이 ⭐
+    <span class="sum-sub">비서가 완성되는 지점 — 영수증 사진 한 장이 그대로 기록으로 남는 워크플로</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="callout cl-a" style="margin-top:14px">
+      <span class="cl-t">⭐ 이 단계가 에르메스의 존재 이유입니다</span>
+      여기까지 오면 Hermes가 단순한 “터미널 AI”에서 <strong>“어디서든 부를 수 있는 비서”</strong>로 바뀝니다.
+    </div>
+
+    <h4 class="blk">5-1. 텔레그램 (주력)</h4>
+    <p style="font-size:14.2px;color:var(--text2)">준비물은 두 가지입니다.</p>
+    <ul>
+      <li><strong>봇 토큰:</strong> 텔레그램에서 <code>@BotFather</code>에게 <code>/newbot</code> 이라고 보내면 발급됩니다</li>
+      <li><strong>내 Chat ID:</strong> <code>@userinfobot</code>에게 아무 말이나 보내면 숫자로 알려줍니다 (나만 봇을 쓰도록 제한하는 용도)</li>
+    </ul>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>맥의 Hermes Agent를 텔레그램과 연동해서 스마트폰으로 원격 제어하려고 해. 나는 초보자야.
+봇 토큰과 내 Chat ID는 준비했어.
+
+알려줄 것:
+1) Hermes 설정 파일에 텔레그램 봇 토큰과 Chat ID를 등록하는 형식
+2) 나만 이 봇을 쓸 수 있게 제한하는 설정
+3) 게이트웨이를 실행하는 명령어
+4) 터미널을 꺼도 게이트웨이가 계속 돌아가게 하는 방법 (맥 기준, 자동 시작 등록)
+5) 스마트폰에서 사진·음성 파일을 보냈을 때 처리되는지 테스트하는 방법</pre></div>
+    <div class="callout cl-warn"><span class="cl-t">⚠ 4번이 가장 중요합니다</span>
+      이걸 안 하면 터미널 창을 닫는 순간 텔레그램이 먹통이 됩니다.
+      <strong>외출 중에 비서가 사라지는 셈</strong>이니 반드시 자동 실행 등록까지 하십시오.</div>
+
+    <h4 class="blk">5-2. 슬랙 (보조 · 가끔 사용)</h4>
+    <p style="font-size:14.2px;color:var(--text2)">연구실 채널에 결과를 공유해야 할 때만 쓰므로 <strong>나중에 해도 됩니다.</strong>
+      텔레그램이 안정적으로 돌아가는 것을 확인한 뒤에 추가하십시오.</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">💬</span>AI에게 이렇게 물어보세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>Hermes Agent를 슬랙과도 연동하고 싶어. 텔레그램 연동은 이미 끝났어.
+슬랙 앱 생성부터 토큰 발급, Hermes 설정 등록, 채널 초대까지 순서대로 알려줘. 나는 초보자야.</pre></div>
+
+    <h4 class="blk">5-3. 세 갈래 원격 경로가 완성됩니다</h4>
+    <div class="tw"><table class="compact"><thead><tr><th class="nw">경로</th><th class="nw">연결 대상</th><th class="nw">성격</th><th>이럴 때</th></tr></thead><tbody>
+      <tr><td class="nw"><strong>텔레그램 · 슬랙</strong></td><td class="nw"><strong>맥의 Hermes</strong></td><td class="nw"><span class="badge bg-a">위임</span></td><td>사진·음성·링크 던지고 결과만 받기</td></tr>
+      <tr><td class="nw">Orca 모바일 (프리덤 트랙)</td><td class="nw">본체의 Orca</td><td class="nw"><span class="badge bg-b">원격 조작</span></td><td>본체 작업을 밖에서 이어가기</td></tr>
+      <tr><td class="nw">Chrome Remote Desktop</td><td class="nw">맥·본체 화면</td><td class="nw"><span class="badge bg-c">화면 제어</span></td><td>여러 파일을 보며 다루기</td></tr>
+    </tbody></table></div>
+    <div class="done"><span class="dk">✅ 완료 판정</span><div>스마트폰 텔레그램에서 봇에게
+      <strong>“오늘 날짜와 지금 맥북 상태 알려줘”</strong>를 보냈을 때 답장이 오면 성공입니다.
+      <strong>사진을 한 장 보내서 인식하는지도 확인</strong>해 보십시오.</div></div>
+  </div>
+</details>
+
+<details class="acc a-acc">
+  <summary><span class="num">6</span><span class="sum-t">백업 · 연구 자산 구축 — 완성된 비서에게 맡기십시오
+    <span class="sum-sub">여기까지 왔으면 직접 설정 파일을 만질 필요가 없습니다</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <p style="margin-top:14px;font-size:14.2px;color:var(--text2)">Hermes는 이제
+      <strong>터미널 명령을 직접 실행하고 파일을 직접 만들 수 있는 상태</strong>입니다.
+      손이 많이 가는 나머지 작업은 <strong>비서에게 시키면 됩니다.</strong>
+      이것이 에이전트를 구축한 이유이기도 합니다. (프리덤 트랙에서 만든 Claude에게 물어보며 진행하셔도 됩니다.)</p>
+
+    <h4 class="blk">6-1. Google Drive 자동 백업 <span class="badge bg-w">가장 중요</span></h4>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>연구 자산이 전부 맥에 모여 있으므로, 맥의 백업이 곧 전체 연구 자산의 백업입니다.</strong>
+      이 항목만은 미루지 마십시오.</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">🤖</span>Hermes(또는 Claude)에게 이렇게 지시하세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>내 맥의 연구 자료를 구글 드라이브에 자동 백업하는 환경을 만들어줘.
+
+조건:
+- rclone을 사용해서 구글 드라이브와 연결
+- 백업 대상: ~/Documents 아래의 연구 관련 폴더, 연구 위키, ECC Atlas
+- 제외 대상: 설정 파일이나 API 키가 들어있는 폴더는 절대 제외
+- 하루 한 번 자동으로 동기화되게 등록
+- 백업이 실패했을 때 내가 알 수 있는 방법(텔레그램 알림 등)도 만들어줘
+- 진행하면서 내가 직접 해야 하는 부분(브라우저 로그인 등)은 그때그때 알려줘
+
+설치가 필요하면 설치부터 해줘. 각 단계에서 뭘 하고 있는지 알려주면서 진행해줘.</pre></div>
+    <div class="callout cl-warn"><strong>“설정 파일이 들어있는 폴더는 제외”</strong> 조건을 반드시 넣으십시오.
+      안 그러면 API 키가 클라우드에 올라갑니다.</div>
+
+    <h4 class="blk">6-2. 연구 보조시스템 위키 · ECC Atlas 구축</h4>
+    <p style="font-size:14.2px;color:var(--text2)">이 두 자산은 <strong>맥에 두는 것이 원칙</strong>입니다.
+      문헌을 읽을 때마다 <strong>Hermes가 자동으로 축적·색인·상호링크</strong>하는 작업이 상시 돌아가야 하는데,
+      그 자동화가 가능한 곳이 맥뿐이기 때문입니다.</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">🤖</span>Hermes에게 이렇게 지시하세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>내 연구 문헌을 축적할 지식베이스를 맥에 만들어줘.
+
+만들 것:
+1) 연구 보조시스템 위키 — 읽은 논문을 축적하고 문서끼리 상호 링크가 걸리는 구조
+2) ECC Atlas — ECC·자기치유 재료 분야 지식을 지도처럼 구조화한 아카이브
+
+조건:
+- 폴더 구조와 파일 명명 규칙을 먼저 제안해줘 (내가 확인한 뒤에 만들어줘)
+- 앞으로 논문을 던져주면 자동으로 알맞은 위치에 정리되도록 규칙을 문서로 남겨줘
+- 텔레그램으로 논문을 보내도 같은 규칙으로 정리되게 해줘
+- 구글 드라이브 백업 대상에 포함되게 해줘</pre></div>
+    <div class="callout cl-tip"><strong>“먼저 제안해줘, 내가 확인한 뒤에 만들어줘”</strong>를 꼭 넣으십시오.
+      지식베이스 구조는 한번 정하면 바꾸기 어려우므로, 비서가 곧장 만들어버리기 전에 한 번 검토하는 편이 좋습니다.</div>
+
+    <h4 class="blk">6-3. SaaS 연동을 Hermes에도 붙이기</h4>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>프리덤 트랙에서 이미 Orca/Antigravity에 붙이셨습니다.</strong>
+      여기서는 <strong>Hermes가 같은 서비스를 쓸 수 있도록</strong> 연결만 추가합니다.
+      (MCP를 두 번 등록했던 것과 같은 이유입니다.)</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">🤖</span>Hermes에게 이렇게 지시하세요<span class="sp"></span><button class="copy">복사</button></div>
+<pre>Hermes Agent에서도 구글 드라이브와 NotebookLM, Notion을 쓸 수 있게 연결해줘.
+Orca/Antigravity 쪽에는 이미 연결해뒀으니, 거기서 쓴 인증 정보를 재사용할 수 있으면 그렇게 해줘.
+
+1) notebooklm-mcp-cli를 Hermes에 연결
+2) 구글 드라이브 접근 (백업 스크립트와 별개로, 대화 중 파일을 찾을 수 있게)
+3) Notion 연구논문관리 대시보드 연결
+
+내가 직접 해야 하는 인증 절차는 그때그때 알려줘.</pre></div>
+    <div class="callout cl-tip"><strong>이게 되면 텔레그램으로도 됩니다.</strong>
+      “드라이브에서 지난주 발표자료 찾아줘” 같은 요청을 외출 중에 던질 수 있게 됩니다.</div>
+
+    <h4 class="blk">6-4. 원격 데스크톱 (Chrome Remote Desktop)</h4>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>본체·노트북에서 맥의 화면을 통째로 열기 위한 통로</strong>입니다.
+      브라우저에서 클릭만 하면 되므로 <strong>AI 없이 직접 하시는 게 빠릅니다.</strong></p>
+    <div class="od">
+      <div class="od-row"><span class="od-n">1</span><div class="od-b"><b>맥에서</b> Chrome으로
+        <a href="https://remotedesktop.google.com/access" target="_blank" rel="noopener">remotedesktop.google.com/access</a> 접속</div></div>
+      <div class="od-row"><span class="od-n">2</span><div class="od-b">“원격 액세스 설정” → 호스트 프로그램 설치 → 6자리 PIN 지정</div></div>
+      <div class="od-row"><span class="od-n">3</span><div class="od-b"><b>본체·노트북에서</b> 같은 구글 계정으로 접속하면 맥 화면이 열립니다</div></div>
+    </div>
+  </div>
+</details>
+
+<!-- ---------------- 점검 체크리스트 ---------------- -->
+<h3 class="blk" id="b-check">점검 체크리스트 <span class="badge bg-c">36항목 · 진행 상태 저장됨</span></h3>
+<p>하나라도 실패하면 그 항목의 에러를 그대로 복사해 AI에게 물어보십시오.
+  체크한 내용은 이 브라우저에 저장되어 다시 열어도 유지됩니다.</p>
+
+<div class="ck-head"><h4>프리덤 트랙 점검 <span class="badge bg-b plain">15항목</span></h4>
+  <div class="bar"><i data-bar="B"></i></div><span class="ck-n" data-cnt="B">0 / 15</span></div>
+<div class="ck-list" data-group="B">
+  <label class="ck"><input type="checkbox" data-ck="b1"><span class="ck-b"><span class="ck-t">1. 앱 설치</span>
+    <span class="ck-m"><span><b>확인</b> 맥·본체·노트북 3대에서 각각 실행</span><span><b>통과</b> 셋 다 실행됨</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="b2"><span class="ck-b"><span class="ck-t">2. 구독 인증</span>
+    <span class="ck-m"><span><b>확인</b> 계정 설정 화면 확인</span><span><b>통과</b> 구독 플랜으로 인증됨</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="b3"><span class="ck-b"><span class="ck-t">3. 추가 과금 없음</span>
+    <span class="ck-m"><span><b>확인</b> 계정의 API 사용량 화면 확인</span><span><b>통과</b> 사용량이 늘지 않음</span></span></span></label>
+  <label class="ck crit"><input type="checkbox" data-ck="b4"><span class="ck-b"><span class="ck-t">4. MCP 인식</span>
+    <span class="ck-m"><span><b>확인</b> “연결된 MCP 도구 목록 보여줘”</span><span><b>통과</b> 43개 (3대 모두)</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="b5"><span class="ck-b"><span class="ck-t">5. 한글 문서</span>
+    <span class="ck-m"><span><b>확인</b> HWPX 파일 하나 열어서 요약 시키기</span><span><b>통과</b> 내용을 읽어냄</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="b6"><span class="ck-b"><span class="ck-t">6. 법령 조회</span>
+    <span class="ck-m"><span><b>확인</b> “korean-law로 건축법 1조 찾아줘”</span><span><b>통과</b> 조문 원문이 나옴</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="b7"><span class="ck-b"><span class="ck-t">7. 통계 조회</span>
+    <span class="ck-m"><span><b>확인</b> “korean-stats로 최근 5년 인구 통계 조회해줘”</span><span><b>통과</b> 실제 수치가 나옴</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="b8"><span class="ck-b"><span class="ck-t">8. Orca 모바일</span>
+    <span class="ck-m"><span><b>확인</b> 외부 네트워크에서 본체 접속</span><span><b>통과</b> 대화가 됨</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="b9"><span class="ck-b"><span class="ck-t">9. 본체 절전</span>
+    <span class="ck-m"><span><b>확인</b> 본체를 한동안 두었다가 모바일 접속</span><span><b>통과</b> 여전히 연결됨</span></span></span></label>
+  <label class="ck crit"><input type="checkbox" data-ck="b10"><span class="ck-b"><span class="ck-t">10. 키 보안</span>
+    <span class="ck-m"><span><b>확인</b> 3대 각각에서 MCP 설정 파일 권한·백업 제외 확인</span><span><b>통과</b> 노출 없음</span></span></span></label>
+  <label class="ck crit"><input type="checkbox" data-ck="b11"><span class="ck-b"><span class="ck-t">11. Google Drive</span>
+    <span class="ck-m"><span><b>확인</b> 3대 각각에서 “드라이브에서 [파일] 찾아줘”</span><span><b>통과</b> 파일을 찾아냄</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="b12"><span class="ck-b"><span class="ck-t">12. NotebookLM</span>
+    <span class="ck-m"><span><b>확인</b> “[노트북명]에서 [주제] 찾아줘”</span><span><b>통과</b> 내용이 나옴</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="b13"><span class="ck-b"><span class="ck-t">13. Notion / Gmail·Calendar</span>
+    <span class="ck-m"><span><b>확인</b> 대시보드 조회 · 일정 확인</span><span><b>통과</b> 정상 조회됨</span></span></span></label>
+  <label class="ck crit"><input type="checkbox" data-ck="b14"><span class="ck-b"><span class="ck-t">14. 인증 토큰 보안</span>
+    <span class="ck-m"><span><b>확인</b> 3대 각각에서 토큰 파일 권한·백업 제외 확인</span><span><b>통과</b> 노출 없음</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="b15"><span class="ck-b"><span class="ck-t">15. Hermes 미설치 (의도된 설계)</span>
+    <span class="ck-m"><span><b>확인</b> 본체·노트북에 Hermes가 없는지 확인</span><span><b>통과</b> 설치되어 있지 않음</span></span></span></label>
+</div>
+<div class="ck-tools"><button class="mini" data-clear="B">B 체크 초기화</button></div>
+<div class="callout cl-note">
+  <strong>4 · 10 · 11 · 14번은 기기 3대에서 각각 확인해야 합니다.</strong> 한 대만 되고 나머지는 안 되는 경우가 흔합니다.
+  <strong>15번은 의도된 설계입니다</strong> — 본체·노트북에는 Hermes를 깔지 않습니다.
+</div>
+
+<div class="ck-head" style="margin-top:30px"><h4>에르메스 트랙 · 본체 <span class="badge bg-a plain">10항목</span></h4>
+  <div class="bar"><i data-bar="A1"></i></div><span class="ck-n" data-cnt="A1">0 / 10</span></div>
+<div class="ck-list" data-group="A1">
+  <label class="ck"><input type="checkbox" data-ck="a1"><span class="ck-b"><span class="ck-t">1. 기초 환경</span>
+    <span class="ck-m"><span><b>확인</b> python3 --version 등 3종</span><span><b>통과</b> 버전이 출력됨</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a2"><span class="ck-b"><span class="ck-t">2. Hermes 실행</span>
+    <span class="ck-m"><span><b>확인</b> 터미널에 hermes</span><span><b>통과</b> 프로그램이 뜸</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a3"><span class="ck-b"><span class="ck-t">3. 창구 3종</span>
+    <span class="ck-m"><span><b>확인</b> Orca·Antigravity·터미널에서 각각 실행</span><span><b>통과</b> 셋 다 동작</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a4"><span class="ck-b"><span class="ck-t">4. 모델 연결</span>
+    <span class="ck-m"><span><b>확인</b> Hermes에 “안녕”</span><span><b>통과</b> 답변이 옴</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a5"><span class="ck-b"><span class="ck-t">5. 모델 전환</span>
+    <span class="ck-m"><span><b>확인</b> Timely ↔ OpenRouter 전환 후 질문</span><span><b>통과</b> 양쪽 다 답변이 옴</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a6"><span class="ck-b"><span class="ck-t">6. 현재 경로 확인</span>
+    <span class="ck-m"><span><b>확인</b> “지금 어느 모델·프로바이더로 답하고 있어?”</span><span><b>통과</b> 정확히 답함</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a7"><span class="ck-b"><span class="ck-t">7. MCP 인식</span>
+    <span class="ck-m"><span><b>확인</b> “연결된 MCP 도구 목록 보여줘”</span><span><b>통과</b> 43개 확인</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a8"><span class="ck-b"><span class="ck-t">8. 한글 문서</span>
+    <span class="ck-m"><span><b>확인</b> HWPX 파일 열어서 도장 배치 시켜보기</span><span><b>통과</b> 서식 유지된 결과물</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a9"><span class="ck-b"><span class="ck-t">9. 법령 조회</span>
+    <span class="ck-m"><span><b>확인</b> “korean-law로 건축법 1조 찾아줘”</span><span><b>통과</b> 조문 원문이 나옴</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a10"><span class="ck-b"><span class="ck-t">10. 통계 조회</span>
+    <span class="ck-m"><span><b>확인</b> “korean-stats로 최근 5년 인구 통계 조회해줘”</span><span><b>통과</b> 실제 수치가 나옴</span></span></span></label>
+</div>
+
+<div class="ck-head" style="margin-top:26px"><h4>에르메스 트랙 · 비서 기능 (게이트웨이) <span class="badge bg-a plain">5항목</span></h4>
+  <div class="bar"><i data-bar="A2"></i></div><span class="ck-n" data-cnt="A2">0 / 5</span></div>
+<div class="ck-list" data-group="A2">
+  <label class="ck"><input type="checkbox" data-ck="a11"><span class="ck-b"><span class="ck-t">11. 텔레그램 텍스트</span>
+    <span class="ck-m"><span><b>확인</b> 스마트폰에서 봇에게 메시지</span><span><b>통과</b> 답장이 옴</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a12"><span class="ck-b"><span class="ck-t">12. 텔레그램 사진</span>
+    <span class="ck-m"><span><b>확인</b> 영수증 사진 한 장 전송</span><span><b>통과</b> 내용을 읽어냄</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a13"><span class="ck-b"><span class="ck-t">13. 텔레그램 음성</span>
+    <span class="ck-m"><span><b>확인</b> 짧은 녹음 파일 전송</span><span><b>통과</b> 내용을 받아 적음</span></span></span></label>
+  <label class="ck crit"><input type="checkbox" data-ck="a14"><span class="ck-b"><span class="ck-t">14. 게이트웨이 상시성</span>
+    <span class="ck-m"><span><b>확인</b> 터미널을 완전히 종료한 뒤 텔레그램 전송</span><span><b>통과</b> 여전히 답장이 옴</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a15"><span class="ck-b"><span class="ck-t">15. 슬랙 (선택)</span>
+    <span class="ck-m"><span><b>확인</b> 연구실 채널에서 호출</span><span><b>통과</b> 응답이 옴</span></span></span></label>
+</div>
+
+<div class="ck-head" style="margin-top:26px"><h4>에르메스 트랙 · 자산 · 안전 <span class="badge bg-a plain">6항목</span></h4>
+  <div class="bar"><i data-bar="A3"></i></div><span class="ck-n" data-cnt="A3">0 / 6</span></div>
+<div class="ck-list" data-group="A3">
+  <label class="ck"><input type="checkbox" data-ck="a16"><span class="ck-b"><span class="ck-t">16. 연구 위키</span>
+    <span class="ck-m"><span><b>확인</b> “이 논문 위키에 정리해서 넣어줘”</span><span><b>통과</b> 규칙대로 저장됨</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a17"><span class="ck-b"><span class="ck-t">17. ECC Atlas</span>
+    <span class="ck-m"><span><b>확인</b> “Atlas에서 [주제] 관련 항목 찾아줘”</span><span><b>통과</b> 해당 항목이 나옴</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a18"><span class="ck-b"><span class="ck-t">18. 원격 접속</span>
+    <span class="ck-m"><span><b>확인</b> 본체·노트북에서 Chrome Remote Desktop</span><span><b>통과</b> 맥 화면이 보임</span></span></span></label>
+  <label class="ck"><input type="checkbox" data-ck="a19"><span class="ck-b"><span class="ck-t">19. 백업 동작</span>
+    <span class="ck-m"><span><b>확인</b> 구글 드라이브에서 파일 확인</span><span><b>통과</b> 최신 파일이 보임</span></span></span></label>
+  <label class="ck crit"><input type="checkbox" data-ck="a20"><span class="ck-b"><span class="ck-t">20. 백업 보안</span>
+    <span class="ck-m"><span><b>확인</b> 백업 대상에 설정 파일이 포함됐는지 확인</span><span><b>통과</b> 포함되지 않음</span></span></span></label>
+  <label class="ck crit"><input type="checkbox" data-ck="a21"><span class="ck-b"><span class="ck-t">21. 백업 범위</span>
+    <span class="ck-m"><span><b>확인</b> 연구 위키·ECC Atlas가 백업에 포함됐는지</span><span><b>통과</b> 포함됨</span></span></span></label>
+</div>
+<div class="ck-tools"><button class="mini" data-clear="A">A 체크 초기화</button></div>
+
+<div class="callout cl-warn hero-warn">
+  <span class="cl-t">⚠ 14 · 20 · 21번이 실무에서 가장 자주 놓치는 항목입니다</span>
+  <p><strong>14번</strong>을 놓치면 외출 중에 비서가 사라지고,</p>
+  <p><strong>20번</strong>을 놓치면 API 키가 클라우드에 노출되며,</p>
+  <p style="margin:0"><strong>21번</strong>을 놓치면 연구 자산 전체가 백업 사각지대에 남습니다. 반드시 확인하십시오.</p>
+</div>
+
+<h4 class="blk">구축 완료 후 — 두 레이어를 나눠 쓰는 법</h4>
+<div class="tw">
+<table>
+<thead><tr><th>하려는 일</th><th class="nw">어느 쪽</th><th class="nw">이유</th></tr></thead>
+<tbody>
+<tr><td>Claude로 원고를 오래 다듬기</td><td class="nw"><span class="badge bg-b">Orca/Antigravity</span></td><td class="nw">구독 인증 → <strong>정액</strong></td></tr>
+<tr><td>영수증·회의록·파일 정리 자동화</td><td class="nw"><span class="badge bg-a">Hermes</span></td><td class="nw">짧게 끝나고 파일 조작이 필요</td></tr>
+<tr><td>이동 중 사진·음성·링크 던지기</td><td class="nw"><span class="badge bg-a">텔레그램</span></td><td class="nw">알아서 처리하고 보고</td></tr>
+<tr><td>밖에서 본체 작업 이어가기</td><td class="nw"><span class="badge bg-b">Orca 모바일</span></td><td class="nw">대화 맥락이 살아 있음</td></tr>
+</tbody></table>
+</div>
+
+</div>
+</section>
+
+<!-- ============================ 실전 활용 ============================ -->
+<section class="section" id="practice" data-sec="실전 활용">
+<div class="wrap">
+
+<div class="sec-head">
+  <div class="sec-kicker">04 · 요약 및 실전 활용 가이드</div>
+  <h2>실전 활용</h2>
+  <p class="lede">실제 사용했던 사례를 중심으로 <strong>“어디서, 어떻게 요청하면 되는지”</strong>를 정리했습니다.
+    프롬프트는 모두 그대로 복사해 쓰실 수 있습니다.</p>
+</div>
+
+<h3 class="blk" id="p-folder">폴더 구조와 “폴더 지정” 요령</h3>
+<p><strong>AI에게 일을 시킬 때 가장 중요한 것은 “어느 폴더의 무엇을”인지 정확히 말해주는 것</strong>입니다.
+  폴더를 안 알려주면 AI가 엉뚱한 곳을 뒤지거나 되묻느라 시간이 걸립니다.</p>
+<div class="tree">/Users/bylee/
+├── Documents/
+│   ├── Professor_Profile/
+│   │   ├── Admin_Documents/          <span class="cm"># 행정 서류, 도장 이미지(seal.png)</span>
+│   │   └── Projects/                 <span class="cm"># 연구과제별 폴더</span>
+│   │       └── 집단연구2025/
+│   │           └── 회의비기록/       <span class="cm"># 회의 기록 5항목 + 영수증 아카이브</span>
+│   ├── Research_Papers/
+│   │   └── My_Published_Papers/      <span class="cm"># 내 발표 논문 모음</span>
+│   ├── Research_Knowledge/
+│   │   ├── <span class="hi">llm_wiki/</span>                 <span class="cm"># 📚 연구 보조시스템 위키  (맥에만)</span>
+│   │   └── <span class="hi">ecc_atlas/</span>                <span class="cm"># 🧭 ECC Atlas             (맥에만)</span>
+│   ├── Knowledge_Archive/            <span class="cm"># 웹 링크·아티클 아카이브</span>
+│   └── Standards_Revision/           <span class="cm"># 설계기준·시방서 개정 작업</span>
+└── Downloads/                        <span class="cm"># 임시 파일, 받은 논문 PDF</span></div>
+<div class="callout cl-warn">
+  <p><strong>연구 위키와 ECC Atlas는 맥에만 있습니다.</strong> 본체·노트북에서는 보이지 않습니다.
+    필요하면 원격 접속하거나 텔레그램으로 물어보십시오.</p>
+  <p style="margin:0"><strong>다른 작업 파일은 Google Drive를 경유하십시오.</strong>
+    드라이브가 전 기기에 연동되어 있으므로, 맥에서 작업하던 파일을 본체에서 이어받는 가장 간단한 통로입니다.</p>
+</div>
+
+<h4 class="blk">폴더 지정 3가지 요령</h4>
+<div class="grid g3">
+  <div class="card"><span class="badge bg-c plain">①</span><h4 style="margin-top:8px">전체 경로 붙여넣기</h4>
+    <p>가장 확실합니다. 파인더에서 파일 우클릭 → <code>option</code> 키를 누르면 <strong>“경로 이름 복사”</strong>가 나타납니다.</p>
+    <p style="margin:0;font-size:12.6px;font-family:var(--mono);color:var(--muted);word-break:break-all">/Users/bylee/Documents/Research_Papers/My_Published_Papers/</p></div>
+  <div class="card"><span class="badge bg-c plain">②</span><h4 style="margin-top:8px"><code>~</code> 로 줄여 쓰기</h4>
+    <p><code>~</code> 는 <code>/Users/bylee</code> 를 뜻합니다.</p>
+    <p style="margin:0;font-size:12.6px;font-family:var(--mono);color:var(--muted)">~/Documents/Research_Papers/</p></div>
+  <div class="card"><span class="badge bg-c plain">③</span><h4 style="margin-top:8px">저장 위치도 함께 말하기</h4>
+    <p style="margin:0">“분석해줘”만 하면 화면에만 뜨고 끝납니다.
+      <strong>“○○ 폴더에 △△.md 파일로 저장해줘”</strong>까지 붙이십시오.</p></div>
+</div>
+<div class="callout cl-tip">
+  <strong>텔레그램에서는</strong> 경로를 타이핑하기 번거로우므로
+  <strong>“평소 회의비 기록 폴더에”</strong>, <strong>“논문 폴더에”</strong>처럼 평소 쓰는 이름으로 말해도 됩니다.
+  자주 쓰는 폴더는 비서가 기억하고 있습니다.
+</div>
+
+<h3 class="blk" id="p-cases">실전 활용 사례 <span class="badge bg-c">16건</span></h3>
+<div class="chips" id="caseChips" role="group" aria-label="사례 분류 필터">
+  <button class="chip" data-cat="all" aria-pressed="true">전체 <span class="cnt">16</span></button>
+  <button class="chip" data-cat="research" aria-pressed="false">학술 연구·심사 <span class="cnt">4</span></button>
+  <button class="chip" data-cat="mcp" aria-pressed="false">MCP 3종 <span class="cnt">3</span></button>
+  <button class="chip" data-cat="kb" aria-pressed="false">지식베이스 <span class="cnt">2</span></button>
+  <button class="chip" data-cat="saas" aria-pressed="false">SaaS·클라우드 <span class="cnt">2</span></button>
+  <button class="chip" data-cat="telegram" aria-pressed="false">텔레그램 <span class="cnt">3</span></button>
+  <button class="chip" data-cat="remote" aria-pressed="false">원격 <span class="cnt">2</span></button>
+</div>
+<p id="caseEmpty" class="hidden" style="color:var(--muted);text-align:center;padding:26px">해당하는 사례가 없습니다.</p>
+
+<details class="acc" data-cat="research">
+  <summary><span class="num">1</span><span class="sum-t">논문 리뷰 — 내가 먼저 심사하고, AI로 누락분만 보강
+    <span class="sum-sub">심사 주체는 나 · AI는 내가 놓친 부분만 찾아주는 2차 점검자</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-b">권장: 프리덤</span><span class="badge bg-c plain">맥·본체·노트북 어디서든</span></div>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>왜 B인가:</strong> 긴 논문 전체를 읽히므로 정액이 유리합니다.</p>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>상황:</strong> 저널 에디터·심사위원으로서 투고 논문 PDF를 받았을 때.
+      <strong>심사의 주체는 어디까지나 나이며, AI는 내가 놓쳤을 수 있는 부분을 찾아주는 2차 점검자로만 씁니다.</strong></p>
+    <h4 class="blk">진행 순서</h4>
+    <div class="od">
+      <div class="od-row"><span class="od-n">1</span><div class="od-b"><strong>내가 먼저 논문을 직접 읽고 리뷰 의견을 작성합니다.</strong> 판단·평가는 전적으로 내가 합니다</div></div>
+      <div class="od-row"><span class="od-n">2</span><div class="od-b">내 리뷰 초안과 논문을 함께 주고, <strong>내가 짚지 못한 지점이 있는지만</strong> AI에게 추가 검토시킵니다</div></div>
+      <div class="od-row"><span class="od-n">3</span><div class="od-b">AI가 제시한 지적 사항을 하나씩 검토해 <strong>타당하다고 판단한 것만 골라 내 의견서에 반영합니다.</strong> 나머지는 버립니다</div></div>
+    </div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>Review_Manuscript_2026.pdf 논문과, 내가 먼저 작성한 리뷰 의견서 초안
+(my_review_draft.md)을 함께 읽어줘.
+내 초안은 그대로 두고, 내가 놓쳤을 가능성이 있는 부분만 별도로 찾아줘.
+1) 연구의 신규성(Novelty)이 기존 연구(특히 자기치유 시멘트 복합체 분야) 대비
+   명확히 제시되었는지 — 내 초안에서 다루지 않은 쟁점이 있는가?
+2) 실험 계획법의 결함(수화 기간 제어, 균열 폭 측정 오차 등) 중 내가 지적하지 않은 것
+3) 통계적 유의성 검증 없이 과도한 결론을 도출(Overclaiming)한 부분 중 누락된 것
+각 항목을 '내 초안에 이미 있음 / 새로 발견함'으로 구분해서, 근거 페이지와 함께
+표로 정리만 해줘. 내 의견서를 임의로 고쳐 쓰지는 마.</pre></div>
+    <div class="callout cl-b"><strong>반영은 내가 결정합니다:</strong>
+      AI가 정리해 온 표에서 <strong>채택할 항목만 골라</strong> 내 의견서에 직접 반영합니다. AI가 의견서를 자동으로 수정하게 두지 않습니다.</div>
+    <div class="callout cl-a" style="margin-bottom:0"><strong>마무리는 A로:</strong>
+      내가 확정한 의견서를 공식 양식에 넣고 과제 폴더에 저장·백업하는 일은 Hermes에게 넘깁니다.</div>
+  </div>
+</details>
+
+<details class="acc" data-cat="research">
+  <summary><span class="num">2</span><span class="sum-t">설계기준·표준시방서 개정 — 스크리닝 및 양식 문서 자동 생성
+    <span class="sum-sub">KDS·KCS 개정 위원회 작업 — 신구 조문 대비표 검토와 공식 양식 완성</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-c">어느 기기든 가능</span><span class="badge bg-a plain">자동 정리는 맥의 Hermes</span></div>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>상황:</strong> KDS·KCS 개정 위원회 작업 시 방대한 신구 조문 대비표를 검토하고,
+      오탈자·인용 조항 오류를 잡아 공식 제출 양식으로 완성할 때</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>~/Documents/Standards_Revision/콘크리트_설계기준_개정안.hwpx 파일을 검토해줘.
+1) 현행 기준 대비 개정 조항의 용어 일관성 및 인용된 타 기준 번호 정합성 검토
+   (korean-law 도구로 상위 법령/기준 확인)
+2) 오탈자 및 문법적 오류 전수 스크리닝 및 수정안 정리
+3) kordoc 도구로 원본 HWPX 서식(표, 글꼴)을 100% 유지한 채 수정 사항을 반영하고,
+   '개정_사유서_및_신구대비표.hwpx'로 양식에 맞춰 문서를 만들어줘.</pre></div>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>처리 과정:</strong>
+      <code>kordoc</code>로 HWPX 구조 안전 파싱 → <code>korean-law</code>로 인용 법령·행정규칙 번호 교차 검증 →
+      오타·띄어쓰기·단위 표기(MPa, mm) 불일치 일괄 검출 → <code>kordoc.patch_document</code>로 원본 양식 그대로 완성본 출력</p>
+    <div class="callout cl-tip" style="margin-bottom:0"><strong>위원회 회의 중 노트북으로도 즉시 확인 가능합니다.</strong>
+      MCP가 노트북에도 있으므로 현장에서 조문 정합성을 바로 검증할 수 있습니다.</div>
+  </div>
+</details>
+
+<details class="acc" data-cat="research">
+  <summary><span class="num">3</span><span class="sum-t">내 논문 기반 연구 흐름(Research Lineage) 정리
+    <span class="sum-sub">지난 10~15년 논문을 연대기로 분석해 연구 로드맵과 미해결 갭 도출</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-a">권장: 맥</span><span class="badge bg-b plain">통독은 B(정액)</span><span class="badge bg-a plain">저장은 A</span></div>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>왜 맥인가:</strong> 논문 파일과 ECC Atlas가 맥에 있습니다.</p>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>상황:</strong> 지난 10~15년간의 논문을 연대기로 분석해
+      연구 주제의 발전 흐름(예: ECC 배합 설계 → 자기치유 성능 평가 → 머신러닝 기반 다중스케일 예측)을 파악하고
+      대형 과제 제안서에 넣을 때</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>~/Documents/Research_Papers/My_Published_Papers/ 폴더의 내 논문 20편의 초록과 결론부를 전체 분석해줘.
+1) 2010년대 초반부터 현재까지 내 연구의 핵심 테마 변천사(Research Roadmap)를 시계열로 도식화해줘.
+2) 내가 해결해 온 핵심 난제들과 아직 미해결로 남아있는 후속 연구 갭(Research Gap)을 도출해줘.
+3) 결과를 신규 과제 제안서 '1. 연구의 필요성 및 선행연구 흐름' 섹션에
+   바로 삽입할 수 있는 텍스트로 작성해줘.</pre></div>
+  </div>
+</details>
+
+<details class="acc" data-cat="research">
+  <summary><span class="num">4</span><span class="sum-t">나만의 “논문 글쓰기 스타일 가이드” 자동 추출
+    <span class="sum-sub">내 기존 논문에서 문단 구조·학술 표현·도표 설명 스타일을 규칙화</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-a">권장: 맥의 Hermes</span></div>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>왜 A인가:</strong> 결과를 파일로 저장해야 하므로.</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>~/Documents/Research_Papers/My_Published_Papers/ 폴더의 내 대표 논문 5편을 읽고 분석해줘.
+1) 서론-본론-결론의 문단 전개 구조
+2) 내가 자주 사용하는 대표적인 영문 학술 표현 및 동사 패턴
+3) 도표(Figure/Table) 설명 스타일 및 수치 비교 문장 형식
+위 내용을 체계적으로 정리해서 'manuscript_writing_guide.md' 파일로 만들어서 저장해줘.</pre></div>
+  </div>
+</details>
+
+<details class="acc" data-cat="mcp">
+  <summary><span class="num">5</span><span class="sum-t">kordoc — HWPX 공문서 도장 배치 및 개인정보 마스킹
+    <span class="sum-sub">한글 서식에 전자직인을 찍고 연구원 개인정보를 보호 처리</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-c">어느 기기든</span><span class="badge bg-a plain">자동 저장·아카이빙은 맥의 Hermes</span></div>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>상황:</strong> 학과·연구실 제출용 한글 서식에 전자직인을 찍고
+      연구원 개인정보를 보호 처리할 때</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>~/Documents/Admin/연구원_등록신청서.hwpx 파일에:
+1) '(인)' 및 '서명 또는 인' 앵커 위에
+   ~/Documents/Professor_Profile/Admin_Documents/seal.png 도장 이미지를 부유(글 앞)로 배치해줘.
+2) 주민등록번호 뒷자리와 계좌번호는 kordoc.redact_document 도구로 서식을 유지하며
+   마스킹 처리해서 '연구원_등록신청서_완료본.hwpx'로 저장해줘.</pre></div>
+  </div>
+</details>
+
+<details class="acc" data-cat="mcp">
+  <summary><span class="num">6</span><span class="sum-t">korean-stats — KOSIS 국가통계 실시간 조회
+    <span class="sum-sub">논문 서론·정책 보고서에 쓸 최신 국가 통계 수치 확보</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-c">어느 기기든</span><span class="badge bg-a plain">간단한 수치는 텔레그램</span></div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>korean-stats 도구를 사용해서 최근 10년간 국내 노후 인프라
+(30년 이상 경과 교량 및 터널) 비율 및 유지관리 보수비용 추세를 KOSIS에서 실시간 조회해줘.
+연도별 증감률을 표로 만들고,
+우리 연구(유지보수 저감형 ECC 재료)의 필요성을 강조하는 문단을 작성해줘.</pre></div>
+  </div>
+</details>
+
+<details class="acc" data-cat="mcp">
+  <summary><span class="num">7</span><span class="sum-t">korean-law — 인용 법령 확인
+    <span class="sum-sub">작성 중인 기준안과 상충하거나 개정된 조항이 있는지 교차 검증</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-c">어느 기기든</span><span class="badge bg-a plain">회의 중이면 노트북·텔레그램</span></div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>korean-law로 [법령명] [조항] 원문을 찾아서, 지금 작성 중인 기준안과
+상충하거나 개정된 부분이 있는지 확인해줘.</pre></div>
+  </div>
+</details>
+
+<details class="acc" data-cat="kb">
+  <summary><span class="num">8</span><span class="sum-t">읽은 논문을 위키에 축적
+    <span class="sum-sub">연구 보조시스템 위키에 정리하고 관련 문서와 상호 링크 생성</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-a">맥의 Hermes 또는 텔레그램</span><span class="badge bg-a plain">맥에만 있는 자산</span></div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>방금 읽은 이 논문(PDF 첨부 또는 경로)을 연구 보조시스템 위키에 정리해서 넣어줘.
+기존에 정리된 관련 문서들과 상호 링크도 걸어주고,
+ECC Atlas에서 이 논문이 어느 주제 영역에 속하는지도 표시해줘.</pre></div>
+    <div class="callout cl-tip" style="margin-bottom:0"><strong>텔레그램으로 PDF를 보내도 같은 규칙으로 정리됩니다.</strong>
+      이동 중에 읽은 논문을 그 자리에서 던져두면 됩니다.</div>
+  </div>
+</details>
+
+<details class="acc" data-cat="kb">
+  <summary><span class="num">9</span><span class="sum-t">LLM Wiki 기반 연구 갭 도출
+    <span class="sum-sub">위키에 쌓아 둔 문헌 노트에서 얇은 영역을 찾아 제안서 근거로 활용</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-a">맥의 Hermes</span></div>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>상황:</strong> 그동안 연구 보조시스템 위키(LLM Wiki)에 쌓아 둔 문헌 정리를 근거로,
+      아직 얇은 영역을 찾아 다음 과제 제안서의 논거로 삼을 때</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>Research_Knowledge/llm_wiki/ 에 정리해 둔 문헌 노트를 기준으로,
+자기치유 성능 평가 영역에서 아직 문헌이 얇은 부분(연구 갭)이 어디인지 정리해줘.
+다음 과제 제안서에 쓸 수 있게, 위키 안의 근거 문헌 링크와 함께 표로 만들어줘.</pre></div>
+  </div>
+</details>
+
+<details class="acc" data-cat="saas">
+  <summary><span class="num">10</span><span class="sum-t">NotebookLM — 대규모 문헌 심층 질의
+    <span class="sum-sub">노트북에 올려둔 문헌에서 비교 데이터 추출 및 오디오 오버뷰 기획</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-c">어느 기기든</span><span class="badge bg-c plain">SaaS 연동이 전 기기 동일</span></div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>notebooklm-mcp-cli 도구로 'ECC Self-Healing Literature' 노트북에 접속해서,
+최근 연구들에서 박테리아 기반 치유제와 광물질 치유제의 균열 치유 효율 비교 데이터를 추출해줘.
+추출한 비교 결과를 바탕으로 연구실 세미나 발표용 대본 및 오디오 오버뷰 프롬프트를 구성해줘.</pre></div>
+  </div>
+</details>
+
+<details class="acc" data-cat="saas">
+  <summary><span class="num">11</span><span class="sum-t">Google Drive 백업 &amp; Notion 대시보드 동기화
+    <span class="sum-sub">작업 폴더를 즉시 백업하고 신규 논문 메타데이터를 Notion에 정리</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-a">맥의 Hermes</span><span class="badge bg-c plain">조회·수동 동기화는 어느 기기든</span></div>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>왜 맥인가:</strong> 자동 백업 스케줄이 맥에 걸려 있습니다.</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>오늘 작업한 Research_Knowledge/llm_wiki/ 및 집단연구2025/ 폴더를
+rclone을 통해 Google Drive로 즉시 동기화 백업하고,
+새로 추가된 논문 3편의 메타데이터를 Notion_연구논문관리 대시보드 형식에 맞춰 정리해줘.</pre></div>
+  </div>
+</details>
+
+<details class="acc" data-cat="telegram">
+  <summary><span class="num">12</span><span class="sum-t">영수증 사진 전송 → 회의 기록 간단 저장 (필요할 때 꺼내 쓰기)
+    <span class="sum-sub">5개 항목만 남겨 두고, 정산이 필요해진 시점에 한 번에 불러옵니다</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-a">텔레그램 · 위임형</span></div>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>상황:</strong> 연구실 구성원들과 식사·회의 후 결제한 영수증을
+      스마트폰으로 촬영해 텔레그램으로 전송</p>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>목적:</strong> 지금 당장 정식 회의록을 만드는 것이 아니라,
+      <strong>나중에 정산·보고 서류가 필요해질 때 꺼내 쓸 수 있도록 최소 항목만 남겨 두는 것</strong>입니다.</p>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>[영수증 사진 첨부]
+집단과제2025. 회의비 [참석자 이름] 참석. 주제: AI 에이전트 멀티 실행 설정 방법</pre></div>
+    <h4 class="blk">저장하는 항목은 다섯 가지뿐입니다</h4>
+    <table class="compact"><tbody>
+      <tr><td class="nw"><strong>영수증</strong></td><td>원본 이미지 파일 (그대로 아카이빙)</td></tr>
+      <tr><td class="nw"><strong>일시</strong></td><td>영수증 결제 일시</td></tr>
+      <tr><td class="nw"><strong>장소</strong></td><td>공대2호관 213호 (기본값)</td></tr>
+      <tr><td class="nw"><strong>회의시간</strong></td><td>결제 2시간 전부터 1시간 (기본 규칙)</td></tr>
+      <tr><td class="nw"><strong>회의 내용</strong></td><td>참석자 및 주제 — 내가 보낸 한 줄 그대로</td></tr>
+    </tbody></table>
+    <h4 class="blk">비서의 처리 과정</h4>
+    <div class="od">
+      <div class="od-row"><span class="od-n">1</span><div class="od-b">영수증 이미지에서 결제 일시·금액만 OCR로 인식</div></div>
+      <div class="od-row"><span class="od-n">2</span><div class="od-b">위 5개 항목만 채운 <strong>한 건짜리 간단 기록</strong>을
+        <code>~/Documents/Professor_Profile/Projects/집단연구2025/회의비기록/</code> 에 저장하고, 영수증 원본을 같은 폴더에 함께 보관</div></div>
+      <div class="od-row"><span class="od-n">3</span><div class="od-b">텔레그램으로 &quot;저장 완료 + 5개 항목&quot; 한 줄 보고</div></div>
+    </div>
+    <h4 class="blk">나중에 꺼내 쓸 때</h4>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>불러오기 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>집단과제2025 회의비 기록 중 2025년 하반기 것만 모아서,
+일시·장소·회의시간·참석자·주제·금액 표로 정리하고 영수증도 같이 붙여줘.</pre></div>
+    <p style="font-size:14.2px;color:var(--text2)">→ 이때 비로소 정산 서류나 회의록 형태로 가공합니다.</p>
+    <div class="callout cl-a" style="margin-bottom:0">
+      <span class="cl-t">💡 핵심은 &quot;그때그때 완성하지 않는다&quot;는 것입니다</span>
+      식당에서 나오면서 사진 한 장만 보내 두면 기록이 남고, <strong>정산이 실제로 필요해진 시점에 한 번에 불러와 서류로 만듭니다.</strong>
+      매번 회의록을 쓰느라 시간을 들이지 않아도 됩니다.
+    </div>
+  </div>
+</details>
+
+<details class="acc" data-cat="telegram">
+  <summary><span class="num">13</span><span class="sum-t">회의·강의 음성 녹음 전달 → 회의록 및 요약 생성
+    <span class="sum-sub">랩미팅 녹음본에서 안건별 결정사항과 액션 아이템 추출</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-a">텔레그램 · 위임형</span></div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>[음성 파일 첨부]
+오늘 연구실 랩미팅 녹음본이야. 참석자는 나와 대학원생들이고,
+주요 안건별 결정사항과 다음 주 액션 아이템을 표로 정리해서 마크다운 파일로 저장해줘.</pre></div>
+  </div>
+</details>
+
+<details class="acc" data-cat="telegram">
+  <summary><span class="num">14</span><span class="sum-t">웹 링크·아티클 전달 → 지식 아카이브 자동 저장
+    <span class="sum-sub">일상 중 접한 자료를 주제별로 자동 분류·인덱싱</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-a">텔레그램 · 위임형</span></div>
+    <div class="prompt"><div class="prompt-head"><span class="ph-i">📋</span>실제 요청 예시<span class="sp"></span><button class="copy">복사</button></div>
+<pre>[웹 링크 전달] 이 내용 파악해서 핵심만 요약하고,
+Knowledge_Archive/ 폴더에 주제별로 분류해서 저장해줘.</pre></div>
+  </div>
+</details>
+
+<details class="acc" data-cat="remote">
+  <summary><span class="num">15</span><span class="sum-t">학회장에서 본체 작업 이어가기
+    <span class="sum-sub">Orca 모바일 — 대화 맥락이 그대로 살아 있는 상태로 재개</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-b">Orca 모바일 · 원격 조작형</span></div>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>상황:</strong> 연구실 본체에서 원고를 다듬다가 학회에 갔는데,
+      이동 중 생각난 부분을 마저 손보고 싶을 때</p>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>방법:</strong> 스마트폰 <strong>Orca 모바일 앱</strong>으로
+      본체의 Orca 세션에 접속 → <strong>대화 맥락이 그대로 살아 있는 상태</strong>에서 이어서 작업</p>
+    <div class="callout cl-b">
+      <span class="cl-t">텔레그램과의 차이</span>
+      <p>텔레그램은 <strong>새 지시를 던지는</strong> 창구 (맥의 Hermes)</p>
+      <p style="margin:0">Orca 모바일은 <strong>하던 대화를 이어가는</strong> 창구 (본체의 Orca)</p>
+    </div>
+    <div class="callout cl-tip"><strong>본체가 연구·프로젝트 작업의 주력 기기</strong>이므로
+      하던 작업이 대부분 본체에 남아 있습니다. 이 경로가 실제로 가장 자주 쓰이는 이유입니다.</div>
+    <div class="callout cl-warn" style="margin-bottom:0"><strong>본체가 켜져 있어야 합니다.</strong>
+      절전 모드로 들어가면 접속되지 않으니 전원 설정을 확인해 두십시오.</div>
+  </div>
+</details>
+
+<details class="acc" data-cat="remote">
+  <summary><span class="num">16</span><span class="sum-t">노트북에서 본체·맥에 일 시키기
+    <span class="sum-sub">Chrome Remote Desktop — 노트북의 주 사용 방식</span></span><span class="chev">›</span></summary>
+  <div class="acc-body">
+    <div class="case-tags"><span class="badge bg-c">원격 데스크톱 · 화면 제어형</span></div>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>상황:</strong> 노트북으로 이동했는데 무거운 작업을 돌려야 하거나,
+      필요한 자료가 본체·맥에 있을 때</p>
+    <p style="font-size:14.2px;color:var(--text2)"><strong>방법:</strong> Chrome Remote Desktop으로 본체 또는 맥에 접속 →
+      <strong>그쪽 자원과 자료로 그대로 작업</strong></p>
+    <ul>
+      <li>맥에 접속하면 <strong>Hermes·MCP·연구 위키·ECC Atlas를 화면 그대로</strong> 사용</li>
+      <li>대규모 위키 번역이나 장시간 처리 작업을 <strong>중단 없이 모니터링</strong>할 때도 유용</li>
+    </ul>
+    <div class="callout cl-tip"><strong>노트북에도 프리덤이 깔려 있어 직접 작업해도 되지만</strong>,
+      자원과 자료가 본체·맥에 있으므로 <strong>원격으로 붙어 그쪽에 일을 시키는 편이 낫습니다.</strong>
+      이것이 노트북의 주 사용 방식입니다.</div>
+    <div class="callout cl-a"><strong>⚡ 간단한 지시라면 원격 접속조차 필요 없습니다.</strong>
+      노트북의 텔레그램·슬랙으로 맥의 Hermes에게 바로 맡기십시오.</div>
+    <div class="callout cl-note" style="margin-bottom:0"><strong>선택 기준:</strong>
+      간단한 조회·처리는 <strong>텔레그램</strong>, 대화 이어가기는 <strong>Orca 모바일</strong>,
+      <strong>화면을 봐야 할 때만 원격 데스크톱</strong>.</div>
+  </div>
+</details>
+
+<h3 class="blk" id="p-cheat">초보자를 위한 실전 명령 공식 <span class="badge bg-c">19개 템플릿</span></h3>
+<div class="chips" id="cheatChips" role="group" aria-label="치트시트 창구 필터">
+  <button class="chip" data-ch="all" aria-pressed="true">전체 <span class="cnt">19</span></button>
+  <button class="chip" data-ch="b" aria-pressed="false">프리덤 <span class="cnt">3</span></button>
+  <button class="chip" data-ch="mac" aria-pressed="false">맥 (에르메스) <span class="cnt">4</span></button>
+  <button class="chip" data-ch="tg" aria-pressed="false">텔레그램 <span class="cnt">8</span></button>
+  <button class="chip" data-ch="any" aria-pressed="false">어느 기기든 <span class="cnt">6</span></button>
+  <button class="chip" data-ch="remote" aria-pressed="false">원격 <span class="cnt">4</span></button>
+</div>
+<div class="field" style="max-width:340px;margin-bottom:12px">
+  <span class="fi" aria-hidden="true">⌕</span>
+  <input type="search" id="cheatQ" placeholder="치트시트 안에서 찾기" aria-label="치트시트 검색">
+</div>
+<div class="tw">
+<table id="cheatTable">
+<thead><tr><th class="nw">하고 싶은 작업</th><th class="nw">권장 창구</th><th>명령어 작성 템플릿</th><th class="nw"></th></tr></thead>
+<tbody>
+<tr data-ch="b any"><td class="nw"><strong>논문 리뷰 — 내 리뷰 누락분 보강</strong></td><td class="nw"><span class="badge bg-b">프리덤</span></td>
+  <td><code class="tpl">[논문.pdf]와 내 리뷰 초안을 읽고, 내가 놓친 지적 사항만 '기존/신규'로 구분해 표로 정리해줘 (내 초안은 고치지 마)</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="b"><td class="nw"><strong>원고 문장 다듬기</strong></td><td class="nw"><span class="badge bg-b">프리덤</span></td>
+  <td><code class="tpl">[원고] 학술 문체 가이드에 맞춰 문장을 다듬어줘 (피동태, 인칭 배제, 단위 표기)</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="any"><td class="nw"><strong>설계기준·시방서 개정 검토</strong></td><td class="nw"><span class="badge bg-c">어느 기기든</span></td>
+  <td><code class="tpl">[기준문서.hwpx] 용어·인용조항 검토 및 오타 스크리닝하고, kordoc으로 서식 유지해서 개정안 파일로 만들어줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="any"><td class="nw"><strong>HWPX 도장·마스킹</strong></td><td class="nw"><span class="badge bg-c">어느 기기든</span></td>
+  <td><code class="tpl">[문서.hwpx] (인) 위에 도장 이미지 부유 배치하고 개인정보 마스킹해서 완료본 만들어줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="any tg"><td class="nw"><strong>국가통계(KOSIS) 조회</strong></td><td class="nw"><span class="badge bg-c">어느 기기든</span> <span class="badge bg-a plain">텔레그램</span></td>
+  <td><code class="tpl">korean-stats로 최근 10년간 [지표명] 조회해서 증감 추세 표와 시사점 정리해줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="any tg"><td class="nw"><strong>법령·조례 확인</strong></td><td class="nw"><span class="badge bg-c">어느 기기든</span> <span class="badge bg-a plain">텔레그램</span></td>
+  <td><code class="tpl">korean-law로 [법령명] [조항] 원문 찾아서 우리 기준안과 상충하는 부분 있는지 봐줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="mac"><td class="nw"><strong>내 연구 흐름 파악</strong></td><td class="nw"><span class="badge bg-a">맥</span></td>
+  <td><code class="tpl">[내 논문 폴더] 논문 전체 분석하고 ECC Atlas 참조해서 연구 테마 변천사와 미해결 과제 정리해줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="mac"><td class="nw"><strong>글쓰기 스타일 가이드 추출</strong></td><td class="nw"><span class="badge bg-a">맥 (에르메스)</span></td>
+  <td><code class="tpl">[내 논문 폴더] 내 기존 논문 읽고 분석해서 글쓰기 스타일 가이드 파일(.md)로 저장해줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="mac tg"><td class="nw"><strong>논문 위키에 축적</strong></td><td class="nw"><span class="badge bg-a">맥 (에르메스)</span> <span class="badge bg-a plain">텔레그램</span></td>
+  <td><code class="tpl">이 논문 연구 위키에 정리해서 넣고 관련 문서와 링크 걸어줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="mac"><td class="nw"><strong>연구 갭 도출</strong></td><td class="nw"><span class="badge bg-a">맥 (에르메스)</span></td>
+  <td><code class="tpl">연구 위키(llm_wiki) 기준으로 [영역]에서 문헌이 얇은 부분 정리해서 근거 문헌과 함께 표로 만들어줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="any"><td class="nw"><strong>NotebookLM 문헌 질의</strong></td><td class="nw"><span class="badge bg-c">어느 기기든</span></td>
+  <td><code class="tpl">notebooklm-mcp-cli로 [노트북명]에서 [연구주제] 핵심 비교 데이터 추출해서 보고서 써줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="tg"><td class="nw"><strong>영수증 회의 기록 저장</strong></td><td class="nw"><span class="badge bg-a">텔레그램 (에르메스)</span></td>
+  <td><code class="tpl">[사진 첨부] 과제명: OOO, 참석자: OOO, 주제: OOO — 5항목만 간단히 저장해줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="tg"><td class="nw"><strong>음성 녹음 회의록</strong></td><td class="nw"><span class="badge bg-a">텔레그램 (에르메스)</span></td>
+  <td><code class="tpl">[음성 첨부] 연구 미팅 녹음본이야. 안건별 결정사항 정리해서 파일로 저장해줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="tg"><td class="nw"><strong>웹 지식 저장</strong></td><td class="nw"><span class="badge bg-a">텔레그램 (에르메스)</span></td>
+  <td><code class="tpl">[링크 전달] 핵심 요약해서 Knowledge_Archive/ 폴더에 저장해줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="remote b"><td class="nw"><strong>본체 작업 이어가기</strong></td><td class="nw"><span class="badge bg-b">Orca 모바일</span></td>
+  <td>모바일 앱에서 본체 세션 접속 후 대화 계속</td><td class="nw"></td></tr>
+<tr data-ch="remote"><td class="nw"><strong>노트북에서 본체·맥 조작</strong></td><td class="nw"><span class="badge bg-c">리모트 데스크톱</span></td>
+  <td>Chrome Remote Desktop 접속 후 그쪽 자원으로 작업</td><td class="nw"></td></tr>
+<tr data-ch="remote tg"><td class="nw"><strong>노트북에서 비서에게 위임</strong></td><td class="nw"><span class="badge bg-a">텔레그램·슬랙 (에르메스)</span></td>
+  <td>원격 접속 없이 지시 한 줄로 맥의 Hermes에 맡기기</td><td class="nw"></td></tr>
+<tr data-ch="tg"><td class="nw"><strong>연구실 채널 공유</strong></td><td class="nw"><span class="badge bg-a plain">슬랙 (가끔)</span></td>
+  <td><code class="tpl">[결과물] 연구실 채널에 요약해서 공유해줘</code></td>
+  <td class="nw"><button class="copy">복사</button></td></tr>
+<tr data-ch="remote"><td class="nw"><strong>화면 보며 작업</strong></td><td class="nw"><span class="badge bg-c">리모트 데스크톱</span></td>
+  <td>Chrome Remote Desktop으로 맥·본체 접속</td><td class="nw"></td></tr>
+</tbody></table>
+</div>
+<p id="cheatEmpty" class="hidden" style="color:var(--muted);text-align:center;padding:20px">조건에 맞는 항목이 없습니다.</p>
+
+<h3 class="blk" id="p-habit">비용 · 안전 습관</h3>
+
+<h4 class="blk">💰 비용을 아끼는 3가지 습관</h4>
+<div class="grid g3">
+  <div class="card acc-b"><span class="badge bg-b plain">①</span>
+    <h4 style="margin-top:8px">길게 쓸 일이면 반드시 Orca/Antigravity</h4>
+    <p style="margin:0">맥에서도 마찬가지입니다. 같은 모델이라도 <strong>구독 인증이면 정액, API면 종량</strong>입니다.
+      <strong>이 습관 하나가 비용의 대부분을 좌우합니다.</strong></p></div>
+  <div class="card acc-c"><span class="badge bg-c plain">②</span>
+    <h4 style="margin-top:8px">Timely 크레딧 잔량을 주기적으로 확인</h4>
+    <p style="margin:0">크레딧이 남아 있는 동안 Hermes는 사실상 무료입니다.
+      떨어지면 무거운 작업을 프리덤으로 옮기십시오.</p></div>
+  <div class="card acc-a"><span class="badge bg-a plain">③</span>
+    <h4 style="margin-top:8px">Hermes는 “짧고 손이 가는 일”에 집중</h4>
+    <p style="margin:0">영수증 처리, 파일 정리, 위키 축적, 서식 반영 — 짧은 대화로 끝나므로 종량 과금이어도 부담이 적고,
+      <strong>자동화가 없으면 아예 못 하는 일</strong>입니다.</p></div>
+</div>
+
+<h4 class="blk">🔐 안전을 지키는 3가지 습관</h4>
+<div class="grid g3">
+  <div class="card acc-a"><span class="badge bg-w plain">①</span>
+    <h4 style="margin-top:8px">본체·노트북에 Hermes를 설치하지 않기</h4>
+    <p style="margin:0">MCP가 이미 있어 능력 차이가 없습니다.
+      이 원칙이 데이터를 지키는 <strong>1차 방어선</strong>입니다.</p></div>
+  <div class="card acc-c"><span class="badge bg-w plain">②</span>
+    <h4 style="margin-top:8px">맥의 백업이 곧 전 재산의 백업</h4>
+    <p style="margin:0">연구 위키·ECC Atlas·논문·과제 자료가 전부 맥에 있습니다.
+      <strong>구글 드라이브 동기화가 정상 동작하는지 정기적으로 확인</strong>하십시오.</p></div>
+  <div class="card acc-b"><span class="badge bg-w plain">③</span>
+    <h4 style="margin-top:8px">API 키·인증키는 기기 3대 모두에서 관리</h4>
+    <p style="margin:0">MCP를 3대에 깔았으므로 KOSIS 인증키도 3곳에 있습니다.
+      각 기기에서 파일 권한 제한과 백업 제외를 확인하십시오.</p></div>
+</div>
+
+<div class="callout cl-note" style="margin-top:34px;font-size:14.6px;line-height:1.8">
+  <span class="cl-t">결론 — 개인화된 연구·생활 OS로서의 가치</span>
+  “모든 기기에 동일한 AI 작업 환경과 한국 특화 도구를 깔아 어디서든 같은 일을 할 수 있게 하고(공통 기반),
+  맥에만 자율 에이전트와 메신저 게이트웨이를 한 겹 더 올려 반복 업무를 위임(비서 레이어)함으로써,
+  <strong>[학술 연구의 질적 극대화 + 행정 업무의 무마찰 자동화 + 일상 지식의 체계적 자산화]</strong>를
+  어느 자리에서든, 지속 가능한 비용과 데이터 안전성 위에서 달성하는 개인 인공지능 연구 환경”
+</div>
+
+<p style="margin-top:40px;padding-top:20px;border-top:1px solid var(--border);font-size:12.5px;color:var(--muted)">
+  원본 문서 6종(01 시스템 구성 · 02 활용 체계 · 03 구축 가이드 허브 · 03-1 프리덤 트랙 · 03-2 에르메스 트랙 · 04 실전 활용)을
+  통합·재구성한 문서입니다. 구성 정보의 기준은 <a href="#understand">시스템 이해</a> 섹션이며,
+  모델 ID는 2026-08-30 기준으로 확인되었습니다.
+</p>
+
+</div>
+</section>
+
+</main>
+</div>
+
+<nav class="tabbar" aria-label="섹션 이동">
+  <a href="#home" data-nav="home"><span aria-hidden="true">◈</span>홈</a>
+  <a href="#understand" data-nav="understand"><span aria-hidden="true">◎</span>이해</a>
+  <a href="#choose" data-nav="choose"><span aria-hidden="true">⚖</span>선택</a>
+  <a href="#build" data-nav="build"><span aria-hidden="true">⚙</span>구축</a>
+  <a href="#practice" data-nav="practice"><span aria-hidden="true">☰</span>활용</a>
+</nav>
+
+<style>
+.rv{opacity:0;transform:translateY(10px);transition:opacity .5s ease,transform .5s ease}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv,.rv.in{opacity:1;transform:none;transition:none}}
+@media print{.rv,.rv.in{opacity:1!important;transform:none!important}}
+</style>
+
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return (r||document).querySelector(s)},
+    $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+
+/* ---------- localStorage 안전 래퍼 ---------- */
+var store={
+  get:function(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+  set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+
+/* ---------- 1. 테마 ---------- */
+var root=document.documentElement, themeBtn=$("#themeBtn");
+var saved=store.get("sysguide.theme",null);
+if(saved==="dark"||saved==="light") root.setAttribute("data-theme",saved);
+function curTheme(){
+  var a=root.getAttribute("data-theme");
+  if(a==="dark"||a==="light") return a;
+  return window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";
+}
+themeBtn.addEventListener("click",function(){
+  var n=curTheme()==="dark"?"light":"dark";
+  root.setAttribute("data-theme",n); store.set("sysguide.theme",n);
+  themeBtn.setAttribute("aria-label",n==="dark"?"라이트모드 전환":"다크모드 전환");
+});
+
+/* ---------- 2. 모바일 사이드바 ---------- */
+var sb=$("#sidebar"), bd=$("#backdrop"), mb=$("#menuBtn");
+function closeSb(){sb.classList.remove("open");bd.classList.remove("on");mb.setAttribute("aria-expanded","false")}
+mb.addEventListener("click",function(){
+  var o=sb.classList.toggle("open"); bd.classList.toggle("on",o); mb.setAttribute("aria-expanded",String(o));
+});
+bd.addEventListener("click",closeSb);
+$$("#sidebar a").forEach(function(a){a.addEventListener("click",function(){if(window.innerWidth<=900)closeSb()})});
+
+/* ---------- 3. 복사 버튼 ---------- */
+function copyText(t,btn){
+  var done=function(){
+    var o=btn.textContent; btn.textContent="복사됨 ✓"; btn.classList.add("ok");
+    setTimeout(function(){btn.textContent=o;btn.classList.remove("ok")},1600);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done,function(){fallback(t,done)});
+  } else fallback(t,done);
+}
+function fallback(t,cb){
+  var ta=document.createElement("textarea");
+  ta.value=t; ta.setAttribute("readonly",""); ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  try{document.execCommand("copy");cb()}catch(e){}
+  document.body.removeChild(ta);
+}
+document.addEventListener("click",function(e){
+  var btn=e.target.closest?e.target.closest(".copy"):null;
+  if(!btn) return;
+  e.preventDefault();
+  var t="", p=btn.closest(".prompt");
+  if(p){var pre=p.querySelector("pre"); if(pre) t=pre.textContent;}
+  else{var tr=btn.closest("tr"); if(tr){var c=tr.querySelector(".tpl"); if(c) t=c.textContent;}}
+  if(t) copyText(t.trim(),btn);
+});
+
+/* ---------- 4. 검색 인덱스 ---------- */
+var idx=[], uid=0;
+function ensureId(el,pre){ if(!el.id){ el.id=pre+"-"+(++uid); } return el.id; }
+$$("section[data-sec]").forEach(function(sec){
+  var secName=sec.getAttribute("data-sec");
+  var h2=sec.querySelector(".sec-head h2")||sec.querySelector("h1");
+  if(h2) idx.push({t:h2.textContent.trim(),s:secName,id:sec.id});
+  $$("h3.blk, h4.blk",sec).forEach(function(h){
+    idx.push({t:h.textContent.replace(/\s+/g," ").trim(),s:secName,id:ensureId(h,"h")});
+  });
+  $$("details.acc",sec).forEach(function(d){
+    var st=d.querySelector("summary .sum-t");
+    if(!st) return;
+    var main=st.childNodes[0]?String(st.childNodes[0].textContent).trim():st.textContent.trim();
+    var sub=d.querySelector("summary .sum-sub");
+    idx.push({t:main,s:secName+(sub?" · "+sub.textContent.trim():""),id:ensureId(d,"acc")});
+  });
+  $$("tr[data-ch] td:first-child strong",sec).forEach(function(td){
+    idx.push({t:td.textContent.trim(),s:secName+" · 명령 공식",id:ensureId(td.closest("tr"),"row")});
+  });
+  $$(".ck-t",sec).forEach(function(c){
+    idx.push({t:c.textContent.trim(),s:secName+" · 점검 항목",id:ensureId(c.closest(".ck"),"ck")});
+  });
+});
+
+var q=$("#q"), res=$("#results"), sel=-1;
+function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function hl(text,term){
+  var i=text.toLowerCase().indexOf(term);
+  if(i<0) return esc(text);
+  return esc(text.slice(0,i))+"<mark>"+esc(text.slice(i,i+term.length))+"</mark>"+esc(text.slice(i+term.length));
+}
+function runSearch(){
+  var term=q.value.trim().toLowerCase();
+  if(!term){res.classList.remove("on");res.innerHTML="";q.setAttribute("aria-expanded","false");return}
+  var hits=idx.filter(function(x){return x.t.toLowerCase().indexOf(term)>-1||x.s.toLowerCase().indexOf(term)>-1}).slice(0,24);
+  if(!hits.length){res.innerHTML='<div class="empty">검색 결과가 없습니다</div>';}
+  else{
+    res.innerHTML=hits.map(function(x){
+      return '<a href="#'+x.id+'" role="option"><div class="rt">'+hl(x.t,term)+'</div><div class="rs">'+esc(x.s)+'</div></a>';
+    }).join("");
+  }
+  res.classList.add("on"); q.setAttribute("aria-expanded","true"); sel=-1;
+}
+function goTo(id){
+  var el=document.getElementById(id); if(!el) return;
+  var p=el.closest("details"); while(p){p.open=true;p=p.parentElement?p.parentElement.closest("details"):null;}
+  if(el.tagName==="DETAILS") el.open=true;
+  el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+  setTimeout(function(){el.scrollIntoView({block:"center",behavior:"smooth"})},30);
+}
+q.addEventListener("input",runSearch);
+q.addEventListener("focus",function(){if(q.value.trim())runSearch()});
+res.addEventListener("click",function(e){
+  var a=e.target.closest("a"); if(!a) return;
+  e.preventDefault(); goTo(a.getAttribute("href").slice(1));
+  res.classList.remove("on"); q.blur();
+});
+q.addEventListener("keydown",function(e){
+  var items=$$("a",res);
+  if(e.key==="Escape"){res.classList.remove("on");q.blur();return}
+  if(!items.length) return;
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+    e.preventDefault();
+    items.forEach(function(i){i.classList.remove("sel")});
+    sel=e.key==="ArrowDown"?(sel+1)%items.length:(sel<=0?items.length-1:sel-1);
+    items[sel].classList.add("sel"); items[sel].scrollIntoView({block:"nearest"});
+  } else if(e.key==="Enter"){
+    e.preventDefault();
+    var t=sel>=0?items[sel]:items[0];
+    goTo(t.getAttribute("href").slice(1)); res.classList.remove("on"); q.blur();
+  }
+});
+document.addEventListener("click",function(e){
+  if(!$("#searchWrap").contains(e.target)) res.classList.remove("on");
+});
+document.addEventListener("keydown",function(e){
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();q.focus();q.select()}
+});
+
+/* ---------- 5. 스크롤스파이 ---------- */
+var secs=$$("section[data-sec]"), navs=$$("[data-nav]"), ticking=false;
+function spy(){
+  ticking=false;
+  var y=window.scrollY+120, cur=secs[0].id;
+  for(var i=0;i<secs.length;i++){ if(secs[i].offsetTop<=y) cur=secs[i].id; }
+  navs.forEach(function(a){a.classList.toggle("active",a.getAttribute("data-nav")===cur)});
+}
+window.addEventListener("scroll",function(){if(!ticking){ticking=true;requestAnimationFrame(spy)}},{passive:true});
+window.addEventListener("resize",spy); spy();
+
+/* ---------- 6. 사례 필터 ---------- */
+var caseChips=$$("#caseChips .chip"), cases=$$("details.acc[data-cat]"), caseEmpty=$("#caseEmpty");
+caseChips.forEach(function(c){
+  c.addEventListener("click",function(){
+    var cat=c.getAttribute("data-cat");
+    caseChips.forEach(function(x){x.setAttribute("aria-pressed",String(x===c))});
+    var n=0;
+    cases.forEach(function(d){
+      var ok=(cat==="all"||d.getAttribute("data-cat")===cat);
+      d.classList.toggle("hidden",!ok); if(ok)n++;
+    });
+    caseEmpty.classList.toggle("hidden",n>0);
+  });
+});
+
+/* ---------- 7. 치트시트 필터 + 검색 ---------- */
+var chChips=$$("#cheatChips .chip"), rows=$$("#cheatTable tbody tr"),
+    cheatQ=$("#cheatQ"), cheatEmpty=$("#cheatEmpty"), chCat="all";
+function cheatFilter(){
+  var t=cheatQ.value.trim().toLowerCase(), n=0;
+  rows.forEach(function(r){
+    var okCat=(chCat==="all")||(" "+r.getAttribute("data-ch")+" ").indexOf(" "+chCat+" ")>-1;
+    var okTxt=!t||r.textContent.toLowerCase().indexOf(t)>-1;
+    var ok=okCat&&okTxt; r.classList.toggle("hidden",!ok); if(ok)n++;
+  });
+  cheatEmpty.classList.toggle("hidden",n>0);
+}
+chChips.forEach(function(c){
+  c.addEventListener("click",function(){
+    chCat=c.getAttribute("data-ch");
+    chChips.forEach(function(x){x.setAttribute("aria-pressed",String(x===c))});
+    cheatFilter();
+  });
+});
+cheatQ.addEventListener("input",cheatFilter);
+
+/* ---------- 8. 체크리스트 ---------- */
+var CK_KEY="sysguide.v4.checks", checks=store.get(CK_KEY,{});
+function updBars(){
+  $$("[data-group]").forEach(function(g){
+    var name=g.getAttribute("data-group"), boxes=$$("input[type=checkbox]",g),
+        done=boxes.filter(function(b){return b.checked}).length;
+    var bar=$('[data-bar="'+name+'"]'), cnt=$('[data-cnt="'+name+'"]');
+    if(bar) bar.style.width=(boxes.length?done/boxes.length*100:0)+"%";
+    if(cnt) cnt.textContent=done+" / "+boxes.length;
+  });
+}
+$$("input[data-ck]").forEach(function(b){
+  b.checked=!!checks[b.getAttribute("data-ck")];
+  b.addEventListener("change",function(){
+    checks[b.getAttribute("data-ck")]=b.checked;
+    store.set(CK_KEY,checks); updBars();
+  });
+});
+updBars();
+$$("[data-clear]").forEach(function(btn){
+  btn.addEventListener("click",function(){
+    var g=btn.getAttribute("data-clear");
+    var groups=(g==="A")?["A1","A2","A3"]:[g];
+    groups.forEach(function(name){
+      $$('[data-group="'+name+'"] input[type=checkbox]').forEach(function(b){
+        b.checked=false; checks[b.getAttribute("data-ck")]=false;
+      });
+    });
+    store.set(CK_KEY,checks); updBars();
+  });
+});
+
+/* ---------- 9. 판단 도우미 ---------- */
+var HR={
+  B:{cls:"cl-b",badge:'<span class="badge bg-b">프리덤</span>',t:"Orca / Antigravity 를 여십시오",
+     p:"구독 인증이라 <strong>정액</strong>입니다. 아무리 오래 써도 추가 과금이 없습니다.",
+     w:"맥에서도 마찬가지입니다 — 같은 일을 Hermes로 시키면 같은 모델인데도 종량 과금이 발생합니다.",
+     l:"#c-swap",ln:"같은 맥에서 갈아타는 법 보기"},
+  A:{cls:"cl-a",badge:'<span class="badge bg-a">에르메스</span>',t:"맥의 Hermes에게 맡기십시오",
+     p:"파일을 스스로 만들고 옮길 수 있고, <strong>정해진 규칙을 기억해 자동 적용</strong>합니다.",
+     w:"짧은 대화로 끝나므로 종량 과금이어도 부담이 적고, 자동화가 없으면 아예 못 하는 일입니다.",
+     l:"#p-cases",ln:"실전 사례에서 프롬프트 보기"},
+  C:{cls:"cl-c",badge:'<span class="badge bg-c">공통 · 어느 기기든</span>',t:"지금 앉은 컴퓨터에서 그대로 하십시오",
+     p:"MCP 3종과 SaaS 연동이 <strong>맥·본체·노트북 3대 전부</strong>에 있어 능력 차이가 없습니다.",
+     w:"다만 결과를 정해진 폴더에 자동 정리·아카이빙까지 원하면 맥의 Hermes로 넘기십시오.",
+     l:"#u-mcp",ln:"MCP 3종 도구 보기"},
+  TG:{cls:"cl-a",badge:'<span class="badge bg-a">텔레그램 · 위임</span>',t:"텔레그램으로 맥의 Hermes에게 던지십시오",
+     p:"사진·음성·링크를 보내면 <strong>알아서 처리하고 결과를 보고</strong>합니다.",
+     w:"노트북에서도 원격 접속 없이 지시 한 줄이면 끝납니다. 슬랙은 연구실 채널 공유가 필요할 때만.",
+     l:"#p-cases",ln:"영수증·음성 처리 사례 보기"},
+  OR:{cls:"cl-b",badge:'<span class="badge bg-b">Orca 모바일 · 원격 조작</span>',t:"Orca 모바일로 본체 세션에 붙으십시오",
+     p:"<strong>하던 대화 맥락이 그대로 살아 있는 상태</strong>에서 이어서 작업할 수 있습니다.",
+     w:"본체가 켜져 있어야 합니다 — 절전 모드로 들어가면 접속되지 않습니다.",
+     l:"#c-device",ln:"이어받기 흐름 보기"},
+  CR:{cls:"cl-c",badge:'<span class="badge bg-c">원격 데스크톱 · 화면 제어</span>',t:"Chrome Remote Desktop으로 접속하십시오",
+     p:"맥 또는 본체의 <strong>화면 전체</strong>를 제어합니다. 그쪽 자원과 자료로 그대로 작업합니다.",
+     w:"자료가 본체·맥에 있을 때 유리합니다. 간단한 지시라면 텔레그램이 더 빠릅니다.",
+     l:"#h-remote",ln:"세 갈래 원격 경로 비교"}
+};
+var STEPS={
+  s1:{q:"지금 어디에 계신가요?",s:"현재 위치에 따라 쓸 수 있는 창구가 달라집니다.",
+      o:[{t:"컴퓨터 앞에 있다",d:"맥 · 연구실 본체 · 노트북 중 하나",go:"s2a"},
+         {t:"밖이다 · 이동 중이다",d:"스마트폰만 있거나, 노트북으로 이동했다",go:"s2b"}]},
+  s2a:{q:"어떤 일인가요?",s:"작업의 성격이 에르메스 · 프리덤 · 공통을 가릅니다.",
+      o:[{t:"오래 붙잡고 다듬는 일",d:"원고 검토 · 대량 문헌 통독 · 논리 검증",r:"B"},
+         {t:"반복·정리·저장 자동화",d:"영수증 · 회의 기록 · CV 갱신 · 위키 축적",r:"A"},
+         {t:"도구로 조회·편집",d:"HWPX 서식 · 법령 · KOSIS 통계 · NotebookLM",r:"C"}]},
+  s2b:{q:"무엇이 필요하세요?",s:"원격 경로 셋은 하는 일이 서로 다릅니다.",
+      o:[{t:"지시 한 줄 던지고 결과만 받기",d:"사진 · 음성 · 링크를 보내고 알아서 처리",r:"TG"},
+         {t:"하던 대화를 이어가기",d:"본체에서 하던 작업을 그 자리에서 재개",r:"OR"},
+         {t:"화면을 보며 여러 파일 다루기",d:"본체·맥의 자원과 자료가 필요",r:"CR"}]}
+};
+var hbody=$("#hbody"), hsteps=$("#hsteps"), hreset=$("#hreset");
+function setSteps(n){ $$(".hstep",hsteps).forEach(function(s,i){s.classList.toggle("on",i<n)}); }
+function renderStep(key){
+  var st=STEPS[key];
+  hbody.innerHTML='<div class="hq">'+st.q+'</div><div class="hs">'+st.s+'</div><div class="hopts">'+
+    st.o.map(function(o,i){return '<button class="hopt" data-i="'+i+'">'+o.t+'<small>'+o.d+'</small></button>'}).join("")+'</div>';
+  setSteps(key==="s1"?1:2);
+  hreset.style.display=key==="s1"?"none":"flex";
+  $$(".hopt",hbody).forEach(function(b){
+    b.addEventListener("click",function(){
+      var o=st.o[+b.getAttribute("data-i")];
+      if(o.go) renderStep(o.go); else renderResult(o.r);
+    });
+  });
+}
+function renderResult(k){
+  var r=HR[k];
+  hbody.innerHTML='<div class="hres callout '+r.cls+'" style="margin:0">'+r.badge+
+    '<h4 style="margin-top:9px">'+r.t+'</h4><p>'+r.p+'</p><p class="why">'+r.w+'</p>'+
+    '<p style="margin:12px 0 0"><a href="'+r.l+'">'+r.ln+' →</a></p></div>';
+  setSteps(2); hreset.style.display="flex";
+}
+$("#hresetBtn").addEventListener("click",function(){renderStep("s1")});
+renderStep("s1");
+
+/* ---------- 10. 스크롤 리빌 ---------- */
+if("IntersectionObserver" in window && !(window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches)){
+  var targets=$$(".card,.stat,details.acc,.figwrap,.tw,.callout,.quick,.track,.od-row,.ck-list");
+  targets.forEach(function(el){el.classList.add("rv")});
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
+  },{rootMargin:"0px 0px -8% 0px",threshold:.04});
+  targets.forEach(function(el){io.observe(el)});
+  setTimeout(function(){targets.forEach(function(el){
+    var r=el.getBoundingClientRect(); if(r.top<window.innerHeight) el.classList.add("in");
+  })},60);
+  window.addEventListener("beforeprint",function(){targets.forEach(function(el){el.classList.add("in")})});
+}
+
+/* ---------- 11. 해시 진입 시 details 열기 ---------- */
+if(location.hash){ setTimeout(function(){goTo(location.hash.slice(1))},120); }
+})();
+</script>
+</body>
+</html>
