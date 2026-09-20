@@ -462,11 +462,44 @@ mark{background:color-mix(in srgb,var(--a-bg) 70%,transparent);color:inherit;
   .card,.tw,.ck-list,.figwrap{box-shadow:none}
   a{color:inherit}
 }
+
+/* ---------- 연구실 표시 (상단/하단 얇은 줄) ---------- */
+:root{--labh:27px}
+.lab-bar{position:sticky;top:0;z-index:80;height:var(--labh);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:0 18px;white-space:nowrap;overflow:hidden;
+  font-size:12px;color:var(--muted);background:var(--surface);
+  border-bottom:1px solid var(--border)}
+.lab-foot{padding:15px 18px 18px;border-top:1px solid var(--border);text-align:center;
+  font-size:12px;line-height:1.55;color:var(--muted);background:var(--surface)}
+.lab-bar a,.lab-foot a{color:var(--text2);font-weight:700;text-decoration:none}
+.lab-bar a:hover,.lab-foot a:hover{color:var(--b-fg);text-decoration:underline}
+html{scroll-padding-top:calc(var(--topbar) + var(--labh) + 18px)}
+.topbar{top:var(--labh)}
+.sidebar{top:calc(var(--topbar) + var(--labh));height:calc(100vh - var(--topbar) - var(--labh))}
+.section{scroll-margin-top:calc(var(--topbar) + var(--labh) + 10px)}
+h3.blk{scroll-margin-top:calc(var(--topbar) + var(--labh) + 14px)}
+@media (max-width:900px){
+  .lab-bar{padding:0 14px}
+  .backdrop{inset:calc(var(--topbar) + var(--labh)) 0 0}
+  .lab-foot{padding:15px 14px calc(72px + env(safe-area-inset-bottom))}
+}
+@media (max-width:560px){
+  .lab-bar > span{display:none}
+}
+@media print{
+  .lab-bar{position:static}
+  .lab-bar,.lab-foot{background:none}
+}
 </style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
+<div class="lab-bar">
+  <a href="https://ekvm80.github.io/cmlab/">건설재료 연구실 · Construction Materials Lab</a>
+  <span>Chonnam National University</span>
+</div>
 <header class="topbar">
   <button class="iconbtn" id="menuBtn" aria-label="Open menu" aria-expanded="false">☰</button>
   <a class="brand" href="#home"><span class="dot" aria-hidden="true"></span>
@@ -2460,6 +2493,10 @@ and save it into the Knowledge_Archive/ folder classified by topic.</pre></div>
 </main>
 </div>
 
+<footer class="lab-foot">
+  <a href="https://ekvm80.github.io/cmlab/">건설재료 연구실 · Construction Materials Lab</a>, Chonnam National University &middot;
+  &copy; 2011-<script>document.write(new Date().getFullYear());</script> Prof. Bang Yeon Lee
+</footer>
 <nav class="tabbar" aria-label="Section navigation">
   <a href="#home" data-nav="home"><span aria-hidden="true">◈</span>Home</a>
   <a href="#understand" data-nav="understand"><span aria-hidden="true">◎</span>System</a>
